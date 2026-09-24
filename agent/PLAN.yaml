@@ -7,6 +7,13 @@ milestones:
       - docs/COMPONENT.md에 미정 표시가 없다
       - agent/config.yaml에 실제로 실행해 본 검증 명령이 있다
       - 사람이 첫 도메인 milestone을 승인했다
+  - id: M1
+    outcome: Vision AI 판정 제외(pass-through)에 필요한 Shared 계약 변경이 합의·게시되고, 이 Component가 그 계약을 contract_ref로 채택한다
+    exit_criteria:
+      - I-1~I-4 MESSAGE와 DOCUMENT_CHANGE가 Shared main에 merge되었다
+      - SHARED_CONFIG.json의 contract_ref가 변경된 계약 commit이다
+      - docs/ARCHITECTURE.md의 계약 매핑이 채택한 계약 기준으로 갱신되었다
+    proposed: true
 tasks:
   - id: BOOT-1
     milestone: M0
@@ -26,3 +33,81 @@ tasks:
         text: 사람이 첫 도메인 milestone과 task 분해를 승인했다
         check: {type: manual, how: "PLAN.yaml에 proposed로 추가한 milestone과 task의 proposed 표시를 사람이 제거한다"}
     size: M
+  # 2026-09-24 사용자 결정(D-5): Vision AI 판정 제외(pass-through)에 필요한 Shared 계약 변경을 이 저장소가 제기한다.
+  # 근거 문서와 이슈 구성은 docs/ARCHITECTURE.md 11.7절. 20-plan.md에 따라 게시 task와 채택 task를 나눈다.
+  - id: SHARED-1
+    milestone: M1
+    type: chore
+    title: I-1 범위 축소와 성능 기준 MESSAGE 게시
+    why: 다른 이슈(I-2, I-3)가 related_issues로 가리킬 수 있도록 범위 축소 합의 요청을 먼저 게시한다 (D-3, D-4)
+    depends_on: []
+    scope: [docs/ARCHITECTURE.md]
+    acceptance:
+      - id: A1
+        text: I-1 MESSAGE가 Shared main의 issues/index.json에 등록되어 있고 ID가 ARCHITECTURE.md 게시 기록에 적혀 있다
+        check: {type: command, run: "id=$(grep -Eo '^- I-1: ISSUE-[0-9A-Fa-f-]{36}' docs/ARCHITECTURE.md | cut -d' ' -f3) && test -n \"$id\" && gh api \"repos/$(jq -r .repository SHARED_CONFIG.json)/contents/issues/index.json\" -H 'Accept: application/vnd.github.raw+json' | jq -e --arg id \"$id\" 'any(.issues[]; .issue_id == $id and .type == \"MESSAGE\")'"}
+    size: S
+    proposed: true
+  - id: SHARED-2
+    milestone: M1
+    type: chore
+    title: I-2 입력, I-3 출력, I-4 명확화 MESSAGE 게시
+    why: 입력 Topic 분리, 출력 필드 처리, 남은 명확화 질문을 I-1과 연결해 합의 대상으로 올린다 (D-4, D-12)
+    depends_on: [SHARED-1]
+    scope: [docs/ARCHITECTURE.md]
+    acceptance:
+      - id: A1
+        text: I-2, I-3, I-4 MESSAGE가 Shared main의 issues/index.json에 등록되어 있고 ID가 ARCHITECTURE.md 게시 기록에 적혀 있다
+        check: {type: command, run: "index=$(gh api \"repos/$(jq -r .repository SHARED_CONFIG.json)/contents/issues/index.json\" -H 'Accept: application/vnd.github.raw+json') && for key in I-2 I-3 I-4; do id=$(grep -Eo \"^- $key: ISSUE-[0-9A-Fa-f-]{36}\" docs/ARCHITECTURE.md | cut -d' ' -f3) && test -n \"$id\" && printf '%s' \"$index\" | jq -e --arg id \"$id\" 'any(.issues[]; .issue_id == $id and .type == \"MESSAGE\")' >/dev/null || exit 1; done"}
+    size: S
+    proposed: true
+  - id: SHARED-3
+    milestone: M1
+    type: chore
+    owner: human
+    title: 계약 변경 승인 책임자의 I-1~I-3 합의 결정
+    why: DOCUMENT_CHANGE는 승인 책임자(사용자 본인, D-1)의 합의가 있어야 작성할 수 있다 (D-3)
+    depends_on: [SHARED-2]
+    scope: []
+    acceptance:
+      - id: A1
+        text: 승인 책임자가 I-1~I-3 각각의 채택·수정·거절 결정을 남겼다
+        check: {type: manual, how: "승인 책임자가 결정 내용을 Shared 후속 MESSAGE 또는 이 저장소 PR 코멘트로 남기고, docs/ARCHITECTURE.md 11.1절의 제안 입장과 다른 점을 확인한다"}
+    size: S
+    proposed: true
+  - id: SHARED-4
+    milestone: M1
+    type: chore
+    title: 합의 내용을 DOCUMENT_CHANGE와 Shared 문서 수정으로 게시
+    why: 합의된 범위 축소를 Shared 계약 문서에 반영해야 contract_ref로 채택할 수 있다 (D-3, D-11)
+    depends_on: [SHARED-3]
+    scope: [docs/ARCHITECTURE.md]
+    acceptance:
+      - id: A1
+        text: DOCUMENT_CHANGE가 Shared main의 issues/index.json에 등록되어 있고 ID가 ARCHITECTURE.md 게시 기록(DOC-1)에 적혀 있다
+        check: {type: command, run: "id=$(grep -Eo '^- DOC-1: ISSUE-[0-9A-Fa-f-]{36}' docs/ARCHITECTURE.md | cut -d' ' -f3) && test -n \"$id\" && gh api \"repos/$(jq -r .repository SHARED_CONFIG.json)/contents/issues/index.json\" -H 'Accept: application/vnd.github.raw+json' | jq -e --arg id \"$id\" 'any(.issues[]; .issue_id == $id and .type == \"DOCUMENT_CHANGE\")'"}
+      - id: A2
+        text: DOCUMENT_CHANGE의 transition.rollback에 "현재 범위 제외, 복귀는 새 DOCUMENT_CHANGE로 제안"이 담겨 있다
+        check: {type: manual, how: "merge된 DOCUMENT_CHANGE 본문의 transition 필드를 D-11과 대조한다"}
+    size: M
+    proposed: true
+  - id: SHARED-5
+    milestone: M1
+    type: chore
+    title: 변경된 Shared 계약 채택과 아키텍처 매핑 재확인
+    why: 구현은 Shared 승인 뒤에 한다(U-12). 승인된 계약 commit을 contract_ref로 고정해야 구현 task의 기준이 생긴다
+    depends_on: [SHARED-4]
+    contract: [docs/ARCHITECTURE.md, docs/INTERFACES.md, docs/CONVENTIONS.md]
+    scope: [SHARED_CONFIG.json, docs/ARCHITECTURE.md]
+    acceptance:
+      - id: A1
+        text: contract_ref가 DOCUMENT_CHANGE merge 이후의 Shared commit 전체 SHA다
+        check: {type: command, run: "jq -er '.contract_ref | strings | select(test(\"^[0-9a-fA-F]{40}$\"))' SHARED_CONFIG.json"}
+      - id: A2
+        text: 저장소 검사가 원격 비교까지 통과한다
+        check: {type: command, run: "python3 agent/core/tools/validate.py --remote"}
+      - id: A3
+        text: ARCHITECTURE.md의 계약 매핑(4절)과 참고 ref가 채택한 contract_ref 기준으로 갱신되었다
+        check: {type: manual, how: "ARCHITECTURE.md 상단의 참고 ref가 contract_ref와 같고 4절의 [제안] 표시가 승인 결과로 바뀌었는지 리뷰한다"}
+    size: S
+    proposed: true
