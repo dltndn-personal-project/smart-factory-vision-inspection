@@ -38,27 +38,33 @@ tasks:
   - id: SHARED-1
     milestone: M1
     type: chore
-    title: I-1 범위 축소와 성능 기준 MESSAGE 게시
-    why: 다른 이슈(I-2, I-3)가 related_issues로 가리킬 수 있도록 범위 축소 합의 요청을 먼저 게시한다 (D-3, D-4)
+    title: I-1 범위 축소·성능 기준과 I-4 명확화 MESSAGE 게시, 게시 후 기록
+    why: 다른 이슈(I-2, I-3)가 related_issues로 가리킬 수 있도록 범위 축소 합의 요청을 먼저 게시한다. 관계없는 명확화 질문(I-4)도 함께 게시한다 (D-3, D-4, 2026-09-25 사용자 지시)
     depends_on: []
-    scope: [docs/ARCHITECTURE.md]
+    scope: [docs/ARCHITECTURE.md, SHARED_ISSUE_STATUS.yaml]
     acceptance:
       - id: A1
-        text: I-1 MESSAGE가 Shared main의 issues/index.json에 등록되어 있고 ID가 ARCHITECTURE.md 게시 기록에 적혀 있다
-        check: {type: command, run: "id=$(grep -Eo '^- I-1: ISSUE-[0-9A-Fa-f-]{36}' docs/ARCHITECTURE.md | cut -d' ' -f3) && test -n \"$id\" && gh api \"repos/$(jq -r .repository SHARED_CONFIG.json)/contents/issues/index.json\" -H 'Accept: application/vnd.github.raw+json' | jq -e --arg id \"$id\" 'any(.issues[]; .issue_id == $id and .type == \"MESSAGE\")'"}
+        text: I-1과 I-4 MESSAGE가 Shared main의 issues/index.json에 등록되어 있고 ID가 ARCHITECTURE.md 게시 기록에 적혀 있다
+        check: {type: command, run: "index=$(gh api \"repos/$(jq -r .repository SHARED_CONFIG.json)/contents/issues/index.json\" -H 'Accept: application/vnd.github.raw+json') && for key in I-1 I-4; do id=$(grep -Eo \"^- $key: ISSUE-[0-9A-Fa-f-]{36}\" docs/ARCHITECTURE.md | cut -d' ' -f3) && test -n \"$id\" && printf '%s' \"$index\" | jq -e --arg id \"$id\" 'any(.issues[]; .issue_id == $id and .type == \"MESSAGE\")' >/dev/null || exit 1; done"}
+      - id: A2
+        text: 게시한 I-1, I-4가 90-shared.md 2·4절에 따라 SHARED_ISSUE_STATUS.yaml에 기록되어 있고 원격 검사를 통과한다
+        check: {type: command, run: "python3 -c \"import re, sys, yaml; doc = open('docs/ARCHITECTURE.md', encoding='utf-8').read(); status = (yaml.safe_load(open('SHARED_ISSUE_STATUS.yaml')) or {}).get('issues') or {}; ids = [re.search(r'^- ' + k + r': (ISSUE-[0-9A-Fa-f-]{36})', doc, re.M) for k in ['I-1', 'I-4']]; sys.exit(not all(m and m.group(1) in status for m in ids))\" && python3 agent/core/tools/validate.py --remote"}
     size: S
     proposed: true
   - id: SHARED-2
     milestone: M1
     type: chore
-    title: I-2 입력, I-3 출력, I-4 명확화 MESSAGE 게시
-    why: 입력 Topic 분리, 출력 필드 처리, 남은 명확화 질문을 I-1과 연결해 합의 대상으로 올린다 (D-4, D-12)
+    title: I-2 입력, I-3 출력 MESSAGE 게시, 게시 후 기록
+    why: 입력 Topic 분리와 출력 필드 처리를 I-1과 연결해 합의 대상으로 올린다 (D-4)
     depends_on: [SHARED-1]
-    scope: [docs/ARCHITECTURE.md]
+    scope: [docs/ARCHITECTURE.md, SHARED_ISSUE_STATUS.yaml]
     acceptance:
       - id: A1
-        text: I-2, I-3, I-4 MESSAGE가 Shared main의 issues/index.json에 등록되어 있고 ID가 ARCHITECTURE.md 게시 기록에 적혀 있다
-        check: {type: command, run: "index=$(gh api \"repos/$(jq -r .repository SHARED_CONFIG.json)/contents/issues/index.json\" -H 'Accept: application/vnd.github.raw+json') && for key in I-2 I-3 I-4; do id=$(grep -Eo \"^- $key: ISSUE-[0-9A-Fa-f-]{36}\" docs/ARCHITECTURE.md | cut -d' ' -f3) && test -n \"$id\" && printf '%s' \"$index\" | jq -e --arg id \"$id\" 'any(.issues[]; .issue_id == $id and .type == \"MESSAGE\")' >/dev/null || exit 1; done"}
+        text: I-2, I-3 MESSAGE가 Shared main의 issues/index.json에 등록되어 있고 ID가 ARCHITECTURE.md 게시 기록에 적혀 있다
+        check: {type: command, run: "index=$(gh api \"repos/$(jq -r .repository SHARED_CONFIG.json)/contents/issues/index.json\" -H 'Accept: application/vnd.github.raw+json') && for key in I-2 I-3; do id=$(grep -Eo \"^- $key: ISSUE-[0-9A-Fa-f-]{36}\" docs/ARCHITECTURE.md | cut -d' ' -f3) && test -n \"$id\" && printf '%s' \"$index\" | jq -e --arg id \"$id\" 'any(.issues[]; .issue_id == $id and .type == \"MESSAGE\")' >/dev/null || exit 1; done"}
+      - id: A2
+        text: 게시한 I-2, I-3이 90-shared.md 2·4절에 따라 SHARED_ISSUE_STATUS.yaml에 기록되어 있고 원격 검사를 통과한다
+        check: {type: command, run: "python3 -c \"import re, sys, yaml; doc = open('docs/ARCHITECTURE.md', encoding='utf-8').read(); status = (yaml.safe_load(open('SHARED_ISSUE_STATUS.yaml')) or {}).get('issues') or {}; ids = [re.search(r'^- ' + k + r': (ISSUE-[0-9A-Fa-f-]{36})', doc, re.M) for k in ['I-2', 'I-3']]; sys.exit(not all(m and m.group(1) in status for m in ids))\" && python3 agent/core/tools/validate.py --remote"}
     size: S
     proposed: true
   - id: SHARED-3
@@ -78,17 +84,20 @@ tasks:
   - id: SHARED-4
     milestone: M1
     type: chore
-    title: 합의 내용을 DOCUMENT_CHANGE와 Shared 문서 수정으로 게시
+    title: 합의 내용을 DOCUMENT_CHANGE와 Shared 문서 수정으로 게시, 게시 후 기록
     why: 합의된 범위 축소를 Shared 계약 문서에 반영해야 contract_ref로 채택할 수 있다 (D-3, D-11)
     depends_on: [SHARED-3]
-    scope: [docs/ARCHITECTURE.md]
+    scope: [docs/ARCHITECTURE.md, SHARED_ISSUE_STATUS.yaml]
     acceptance:
       - id: A1
         text: DOCUMENT_CHANGE가 Shared main의 issues/index.json에 등록되어 있고 ID가 ARCHITECTURE.md 게시 기록(DOC-1)에 적혀 있다
         check: {type: command, run: "id=$(grep -Eo '^- DOC-1: ISSUE-[0-9A-Fa-f-]{36}' docs/ARCHITECTURE.md | cut -d' ' -f3) && test -n \"$id\" && gh api \"repos/$(jq -r .repository SHARED_CONFIG.json)/contents/issues/index.json\" -H 'Accept: application/vnd.github.raw+json' | jq -e --arg id \"$id\" 'any(.issues[]; .issue_id == $id and .type == \"DOCUMENT_CHANGE\")'"}
       - id: A2
-        text: DOCUMENT_CHANGE의 transition.rollback에 "현재 범위 제외, 복귀는 새 DOCUMENT_CHANGE로 제안"이 담겨 있다
-        check: {type: manual, how: "merge된 DOCUMENT_CHANGE 본문의 transition 필드를 D-11과 대조한다"}
+        text: DOCUMENT_CHANGE의 change.after 또는 compatibility에 "현재 범위 제외, 복귀는 새 DOCUMENT_CHANGE로 제안"(D-11)이 있고, transition.rollback에 A§19 복구 방법(마지막으로 검증된 Component 조합과 계약 commit으로 되돌림)이 있다
+        check: {type: manual, how: "merge된 DOCUMENT_CHANGE 본문의 change, compatibility, transition.rollback을 D-11과 A§19 복구 방법에 대조한다"}
+      - id: A3
+        text: 게시한 DOCUMENT_CHANGE가 90-shared.md 2·4절에 따라 SHARED_ISSUE_STATUS.yaml에 기록되어 있고 원격 검사를 통과한다
+        check: {type: command, run: "python3 -c \"import re, sys, yaml; doc = open('docs/ARCHITECTURE.md', encoding='utf-8').read(); status = (yaml.safe_load(open('SHARED_ISSUE_STATUS.yaml')) or {}).get('issues') or {}; ids = [re.search(r'^- ' + k + r': (ISSUE-[0-9A-Fa-f-]{36})', doc, re.M) for k in ['DOC-1']]; sys.exit(not all(m and m.group(1) in status for m in ids))\" && python3 agent/core/tools/validate.py --remote"}
     size: M
     proposed: true
   - id: SHARED-5

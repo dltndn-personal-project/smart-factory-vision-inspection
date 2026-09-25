@@ -482,7 +482,7 @@ Shared에는 관측성 요구가 없다. 아래는 모두 [가정]이며 디버�
 | D-8 | `bbox` 제공 | `null`. Simulator에 결함 위치를 요구하지 않는다 | Q-21, Q-22, Q-5 | 4.2, 4.3절 |
 | D-9 | 판정 출처 표시 | 선택 필드 `judgement_source: "pass_through"` | Q-24 | 4.3절 |
 | D-10 | `gradcam/`과 Dashboard의 Grad-CAM 항목 | 둘 다 유지하고 "이번 범위에서는 비어 있음"으로 표시 | Q-22, Q-25 | 1.4, 4.3, 4.4절 |
-| D-11 | `transition`/`rollback` 표현 | "현재 범위 제외, 복귀는 새 DOCUMENT_CHANGE로 제안" | Q-19, Q-23, Q-25 | 11.7절 |
+| D-11 | 범위 축소의 표현 | "현재 범위 제외, 복귀는 새 DOCUMENT_CHANGE로 제안". DOCUMENT_CHANGE에서는 `change.after`와 `compatibility`에 적는다. `transition.rollback`에는 A§19 복구 방법(마지막으로 검증된 Component 조합과 계약 commit으로 되돌림)을 적는다 (2026-09-25 수정) | Q-19, Q-23, Q-25 | 11.7절 |
 | D-12 | 기존 명확화 질문 | MESSAGE 1건(I-4)으로 묶는다 | Q-6, 7, 9, 11, 12, 14, 15, 17 | 11.7절 |
 
 **남은 확인 항목 (우선순위 순)**
@@ -529,7 +529,7 @@ Shared에는 관측성 요구가 없다. 아래는 모두 [가정]이며 디버�
 
 **절차 요약** (Shared `docs/SHARED_WORKFLOW.md`, `AGENTS.md`, `templates/`, ref `6bcd2aad…` 기준. 게시 직전에 Shared 최신 commit으로 다시 확인한다, `90-shared.md` 5절)
 
-- MESSAGE에는 `observation`(사실과 불확실한 부분 구분), `requested_action`, `evidence`, `follow_up.owner`와 `done_when`을 쓴다. MESSAGE만 추가한 PR은 CI가 승인·merge한다.
+- MESSAGE에는 `observation`(사실과 불확실한 부분 구분), `requested_action`, `evidence`, `follow_up.owner`와 `done_when`을 쓴다. MESSAGE만 추가한 PR은 CI가 승인·merge한다. 단, Shared CODEOWNERS에 placeholder가 남아 있거나 저장소의 auto-merge가 꺼져 있으면 CI가 자동 승인·merge하지 않으므로 사람이 merge한다(2026-09-25 확인).
 - DOCUMENT_CHANGE에는 `reason`, `changed_documents`, `change.before/after`, `compatibility`, `transition.adoption/rollback`을 쓰고, 실제 Shared 문서 수정을 같은 PR에 넣는다. CODEOWNERS 승인 뒤 merge된다.
 - 공통 필드는 `source.component: vision-inspection`, `source.task`(PLAN의 SHARED-n), `summary`, `created_at`(UTC), `attention`, `related_issues`(이미 게시된 앞선 Issue만)다.
 - 게시된 Issue는 고치지 않는다. 새 사실과 답변은 새 Issue로 올린다. PR 생성은 게시 완료가 아니며 merge 여부를 확인한다.
@@ -539,18 +539,22 @@ Shared에는 관측성 요구가 없다. 아래는 모두 [가정]이며 디버�
 | 순서 | 이슈 | 유형 | 담을 내용 | 관련 Q | attention | related_issues |
 |---|---|---|---|---|---|---|
 | 1 | I-1 범위 축소와 성능 기준 | MESSAGE | Vision AI 판정(검출, Grad-CAM, 학습·평가) 제외와 pass-through 전환, 과제 출제자 승인 근거(A§16 형식), mAP·20 FPS와 integration의 Vision 측정 제외, Simulator의 Vision 학습 데이터셋 생성 필요 여부 질문, "현재 범위 제외, 복귀는 새 DOCUMENT_CHANGE" 표현, A§19 승인 책임자(사용자 본인)와 CODEOWNERS 반영 요청 | Q-19, Q-23, Q-25의 `training/`·`evaluation/` 부분 | factory-simulator, factory-operations, integration | 없음 |
-| 2 | I-2 입력과 Ground Truth | MESSAGE | 불량 정보 별도 Topic(자기완결형, 이름은 Shared가 정함, bbox 없음, Operations 미구독), Product Created는 Ground Truth 없이 유지하고 소비자에서 Vision 제외, A§3.4·A§8 Ground Truth 사용 목적 추가, integration 검사 규칙 영향, `defect_type` 표기, 결함 여러 개·없음 표현 | Q-20, Q-21, Q-1, Q-2, Q-3 | factory-simulator, integration | I-1 |
-| 3 | I-3 출력과 다운스트림 | MESSAGE | Vision Result 필드 유지, `confidence`·`bbox`·`gradcam_path`는 `null`, `judgement_source: "pass_through"` 선택 필드, Dashboard의 Grad-CAM 항목과 `gradcam/`은 "이번 범위에서는 비어 있음", 상관분석 해석, A§5.3 필드 정합 | Q-22, Q-24, Q-18, Q-25의 `gradcam/` 부분 | factory-operations, integration | I-1 |
-| 4 | I-4 명확화 질문 모음 | MESSAGE | timestamp 유지 확정, QoS·retain, `product_id` 유일성과 production sequence, Inspection Image, 공통 실행 방식, 제품 생성 속도와 결과 지연 목표, 오류 표현, A§6 다이어그램 문구 | Q-6, Q-7, Q-9, Q-11, Q-12, Q-14, Q-15, Q-17 | factory-simulator, factory-operations, integration | 없음 [가정] |
+| 2 | I-4 명확화 질문 모음 | MESSAGE | timestamp 유지 확정, QoS·retain, `product_id` 유일성과 production sequence, Inspection Image, 공통 실행 방식, 제품 생성 속도와 결과 지연 목표, 오류 표현, A§6 다이어그램 문구 | Q-6, Q-7, Q-9, Q-11, Q-12, Q-14, Q-15, Q-17 | factory-simulator, factory-operations, integration | 없음 [가정] |
+| 3 | I-2 입력과 Ground Truth | MESSAGE | 불량 정보 별도 Topic(자기완결형, 이름은 Shared가 정함, bbox 없음, Operations 미구독), Product Created는 Ground Truth 없이 유지하고 소비자에서 Vision 제외, A§3.4·A§8 Ground Truth 사용 목적 추가, integration 검사 규칙 영향, `defect_type` 표기, 결함 여러 개·없음 표현 | Q-20, Q-21, Q-1, Q-2, Q-3 | factory-simulator, factory-operations, integration | I-1 |
+| 4 | I-3 출력과 다운스트림 | MESSAGE | Vision Result 필드 유지, `confidence`·`bbox`·`gradcam_path`는 `null`, `judgement_source: "pass_through"` 선택 필드, Dashboard의 Grad-CAM 항목과 `gradcam/`은 "이번 범위에서는 비어 있음", 상관분석 해석, A§5.3 필드 정합 | Q-22, Q-24, Q-18, Q-25의 `gradcam/` 부분 | factory-operations, integration | I-1 |
 
 - I-1~I-3의 `requested_action`은 승인 책임자(사용자 본인)의 합의 결정이고, `follow_up.owner`는 계약 변경 승인 책임자다. `done_when`은 "합의 결과를 DOCUMENT_CHANGE로 게시"로 둔다. [가정]
-- `evidence`에는 이 문서(원격 main에 올라간 뒤의 링크)와 해당 절 번호를 넣는다(D-5).
+- `evidence`에는 이 문서의 commit SHA 고정 링크(permalink)와 해당 절 번호를 넣는다(D-5). 이 문서의 PR이 merge되기 전에 게시하면 PR 링크도 함께 넣는다(2026-09-25 사용자 지시).
+- 게시 순서는 I-1과 I-4를 먼저(같은 PR, I-1 → I-4 순서로 색인에 추가), 그 뒤 I-2와 I-3이다(2026-09-25 사용자 지시). I-4는 앞선 Issue와 관계가 없어 I-1과 함께 게시할 수 있다.
 - I-2와 I-3은 I-1이 merge된 뒤 게시한다. `related_issues`가 게시된 Issue만 가리킬 수 있기 때문이다.
+- **게시 후 기록:** 게시한 Issue가 Shared main에 merge되면 `90-shared.md` 2·4절에 따라 자기가 게시한 Issue도 색인 순서대로 검토해 `SHARED_ISSUE_STATUS.yaml`에 기록한다(`source_revision`, `component_revision`, `contract_ref`, `reason`, `evidence`, `status`). 이어서 `python3 agent/core/tools/validate.py --remote`로 확인하고, 아래 게시 기록란에 Issue ID를 적는다. 앞선 미검토 Issue가 있으면 그것부터 처리한다.
 
 **2단계: DOCUMENT_CHANGE로 반영**
 
 - 합의가 끝나면 합의 내용을 반영한 Shared 문서 수정을 DOCUMENT_CHANGE로 올린다. 대상 문서는 ARCHITECTURE(A§2, §3.4, §4.3, §7.2, §8, §17, §18, §19, §19.1), INTERFACES(Interface 후보, Image Reference), CONVENTIONS(Ground Truth)다.
-- `transition.adoption`: 각 Component가 변경된 계약 commit을 `contract_ref`로 채택하고 integration이 고정 조합으로 확인한다. `rollback`: 모델 판정 복귀는 새 DOCUMENT_CHANGE로 제안한다(D-11).
+- `change.after`와 `compatibility`: Vision AI 판정은 "현재 범위 제외"이며, 모델 판정 복귀는 새 DOCUMENT_CHANGE로 제안한다(D-11).
+- `transition.adoption`: 각 Component가 변경된 계약 commit을 `contract_ref`로 채택하고 integration이 고정 조합으로 확인한다.
+- `transition.rollback`: 검증에 실패하면 마지막으로 검증된 Component commit 조합과 계약 commit으로 되돌린다(A§19 복구 방법).
 - DOCUMENT_CHANGE를 I-1~I-3에 대응해 나눌지 한 건으로 묶을지는 합의 결과를 보고 정한다. [미정]
 - Shared가 초기화 기간이면 DOCUMENT_CHANGE 없이 문서를 바꿀 수 있지만, 이 계획은 초기화 기간 여부와 관계없이 MESSAGE→DOCUMENT_CHANGE 순서를 따른다. I-1이 첫 운영 Issue라면 게시와 함께 초기화 기간이 끝난다.
 
@@ -558,10 +562,10 @@ Shared에는 관측성 요구가 없다. 아래는 모두 [가정]이며 디버�
 
 | task | 내용 | 담당 |
 |---|---|---|
-| SHARED-1 | I-1 MESSAGE 게시 | agent |
-| SHARED-2 | I-2, I-3, I-4 MESSAGE 게시 | agent |
+| SHARED-1 | I-1, I-4 MESSAGE 게시와 게시 후 기록 | agent |
+| SHARED-2 | I-2, I-3 MESSAGE 게시와 게시 후 기록 | agent |
 | SHARED-3 | 승인 책임자가 I-1~I-3 합의 결정 | human |
-| SHARED-4 | 합의 내용을 DOCUMENT_CHANGE와 Shared 문서 수정으로 게시 | agent |
+| SHARED-4 | 합의 내용을 DOCUMENT_CHANGE와 Shared 문서 수정으로 게시하고 게시 후 기록 | agent |
 | SHARED-5 | merge된 계약 commit을 `contract_ref`로 채택하고 이 문서의 매핑을 다시 확인 | agent |
 
 **게시 기록**
