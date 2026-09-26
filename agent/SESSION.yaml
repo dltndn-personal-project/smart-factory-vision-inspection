@@ -11,7 +11,8 @@ steps:
     그대로 옮겼다. ground_truth.jsonl만 한 줄 + \n
 - do: tests/conftest.py에 shared_examples, gt_file, make_pc, gt_line (spec 04 2절 표)
   check: fixture를 쓰는 테스트가 통과
-  done: false
+  done: true
+  note: gt_file.write는 str 외에 bytes 줄도 받는다(UTF-8 아닌 줄 테스트용). encode는 호출 때 import한다
 - do: payload.py(Rejected, _reject_constant, ProductCreated, parse_product_created,
     build_vision_result, encode)와 test_payload.py
   check: A2, A3
@@ -27,4 +28,4 @@ steps:
   done: false
 attempts: {}
 evidence: {}
-next_action: 'step 2: conftest.py fixture'
+next_action: 'step 3: payload.py와 test_payload.py'
