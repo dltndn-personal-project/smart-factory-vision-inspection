@@ -13,7 +13,7 @@ steps:
 - do: tests/test_smoke.py::test_compose_smoke(spec 04 3.3절 1~9단계, -p vis-smoke, 빈
     포트, 실패 시 로그 100줄, 항상 down -v)
   check: A1, A2
-  done: false
+  done: true
 - do: Makefile smoke 대상과 .PHONY. make smoke 두 번(첫 빌드, 캐시 뒤) 통과와 시간 기록
   check: make smoke 출력이 'N passed'
   done: false
@@ -26,4 +26,4 @@ steps:
   done: false
 attempts: {}
 evidence: {}
-next_action: 'step 3: tests/test_smoke.py 작성 후 pytest -m smoke'
+next_action: 'step 4: Makefile smoke 대상 추가 후 make smoke 두 번'
