@@ -10,7 +10,7 @@ milestones:
   - id: M1
     outcome: Vision AI 판정 제외(pass-through)에 필요한 Shared 계약 변경이 합의·게시되고, 이 Component가 그 계약을 contract_ref로 채택한다
     exit_criteria:
-      - I-1·I-4 MESSAGE와 DOC-1(범위 축소·Vision Result)·DOC-2(불량 정보 전달 경로) DOCUMENT_CHANGE가 Shared main에 merge되었다
+      - I-1·I-4 MESSAGE와 DOC-1(범위 축소·Ground Truth 입력 경로·Vision Result) DOCUMENT_CHANGE가 Shared main에 merge되었다
       - SHARED_CONFIG.json의 contract_ref가 변경된 계약 commit이다
       - docs/ARCHITECTURE.md의 계약 매핑이 채택한 계약 기준으로 갱신되었다
     proposed: true
@@ -35,6 +35,7 @@ tasks:
     size: M
   # 2026-09-24 사용자 결정(D-5): Vision AI 판정 제외(pass-through)에 필요한 Shared 계약 변경을 이 저장소가 제기한다.
   # 2026-09-27 사용자 지시: 이슈와 공용 문서 수정을 같은 PR에 넣는 DOCUMENT_CHANGE 흐름으로 바꾼다(MESSAGE 합의 단계 생략).
+  # 2026-09-27 D-6 재결정((b) Ground Truth 파일 읽기)으로 DOC-2를 DOC-1에 합치고 SHARED-4를 뺐다.
   # 근거 문서와 이슈 구성은 docs/ARCHITECTURE.md 11.7절. 20-plan.md에 따라 게시 task와 채택 task를 나눈다.
   - id: SHARED-1
     milestone: M1
@@ -55,9 +56,9 @@ tasks:
   - id: SHARED-2
     milestone: M1
     type: chore
-    title: DOC-1 범위 축소·Vision Result 확정 DOCUMENT_CHANGE 게시, 게시 후 기록
-    why: I-1의 범위 축소(D-1, D-2, D-11)와 출력 결정(D-7~D-10)을 계약 문서 수정과 함께 올린다 (2026-09-27 사용자 지시, Shared PR #5)
-    depends_on: [SHARED-1]
+    title: DOC-1 범위 축소·Ground Truth 입력 경로·Vision Result 확정 DOCUMENT_CHANGE 게시, 게시 후 기록
+    why: I-1의 범위 축소(D-1, D-2, D-11), 입력 경로(D-6 재결정), 출력 결정(D-7~D-10)을 계약 문서 수정과 함께 한 번에 올린다. 입력 경로 없이는 Vision Result를 발행할 수 없다 (2026-09-27 사용자 지시, Shared PR #6. 닫힌 PR #5 대체)
+    depends_on: [SHARED-1, SHARED-3]
     scope: [docs/ARCHITECTURE.md, SHARED_ISSUE_STATUS.yaml]
     acceptance:
       - id: A1
@@ -76,7 +77,7 @@ tasks:
     type: chore
     owner: human
     title: Vision이 불량 정보를 받는 경로 결정
-    why: Shared ISSUE-9f81b8ac가 Product Created에서 결함 정보를 빼고 ground_truth/products.jsonl을 평가·검증 전용으로 정해, 2026-09-24 결정 D-6(별도 Topic)을 다시 판단해야 한다
+    why: Shared ISSUE-9f81b8ac가 Product Created에서 결함 정보를 빼고 ground_truth/products.jsonl을 평가·검증 전용으로 정해, 2026-09-24 결정 D-6(별도 Topic)을 다시 판단해야 했다. 2026-09-27 사용자가 (b) Ground Truth 파일 읽기로 결정했다
     depends_on: []
     scope: []
     acceptance:
@@ -85,36 +86,17 @@ tasks:
         check: {type: manual, how: "docs/ARCHITECTURE.md 11.3절 D-6 재결정 항목에 사용자 결정과 날짜가 적혀 있다"}
     size: S
     proposed: true
-  - id: SHARED-4
-    milestone: M1
-    type: chore
-    title: DOC-2 불량 정보 전달 경로 DOCUMENT_CHANGE 게시, 게시 후 기록
-    why: pass-through가 동작하려면 Vision이 불량 정보를 받는 경로와 Ground Truth 규칙의 관계가 계약에 있어야 한다
-    depends_on: [SHARED-2, SHARED-3]
-    scope: [docs/ARCHITECTURE.md, SHARED_ISSUE_STATUS.yaml]
-    acceptance:
-      - id: A1
-        text: DOC-2 DOCUMENT_CHANGE가 Shared main의 issues/index.json에 등록되어 있고 ID가 ARCHITECTURE.md 게시 기록에 적혀 있다
-        check: {type: command, run: "index=$(gh api \"repos/$(jq -r .repository SHARED_CONFIG.json)/contents/issues/index.json\" -H 'Accept: application/vnd.github.raw+json') && for key in DOC-2; do id=$(grep -Eo \"^- $key: ISSUE-[0-9A-Fa-f-]{36}\" docs/ARCHITECTURE.md | cut -d' ' -f3) && test -n \"$id\" && printf '%s' \"$index\" | jq -e --arg id \"$id\" 'any(.issues[]; .issue_id == $id and .type == \"DOCUMENT_CHANGE\")' >/dev/null || exit 1; done"}
-      - id: A2
-        text: DOC-2의 transition.rollback에 A§19 복구 방법이 있고, 영향 받는 Component(factory-simulator 등)의 전환 조건이 적혀 있다
-        check: {type: manual, how: "merge된 DOC-2 본문의 compatibility와 transition을 확인한다"}
-      - id: A3
-        text: 게시한 DOC-2가 90-shared.md 2·4절에 따라 SHARED_ISSUE_STATUS.yaml에 기록되어 있고 원격 검사를 통과한다
-        check: {type: command, run: "python3 -c \"import re, sys, yaml; doc = open('docs/ARCHITECTURE.md', encoding='utf-8').read(); status = (yaml.safe_load(open('SHARED_ISSUE_STATUS.yaml')) or {}).get('issues') or {}; ids = [re.search(r'^- ' + k + r': (ISSUE-[0-9A-Fa-f-]{36})', doc, re.M) for k in ['DOC-2']]; sys.exit(not all(m and m.group(1) in status for m in ids))\" && python3 agent/core/tools/validate.py --remote"}
-    size: M
-    proposed: true
   - id: SHARED-5
     milestone: M1
     type: chore
     title: 변경된 Shared 계약 채택과 아키텍처 매핑 재확인
     why: 구현은 Shared 승인 뒤에 한다(U-12). 승인된 계약 commit을 contract_ref로 고정해야 구현 task의 기준이 생긴다
-    depends_on: [SHARED-4]
+    depends_on: [SHARED-2]
     contract: [docs/ARCHITECTURE.md, docs/INTERFACES.md, docs/CONVENTIONS.md]
     scope: [SHARED_CONFIG.json, docs/ARCHITECTURE.md]
     acceptance:
       - id: A1
-        text: contract_ref가 DOC-1·DOC-2 merge 이후의 Shared commit 전체 SHA다
+        text: contract_ref가 DOC-1 merge 이후의 Shared commit 전체 SHA다
         check: {type: command, run: "jq -er '.contract_ref | strings | select(test(\"^[0-9a-fA-F]{40}$\"))' SHARED_CONFIG.json"}
       - id: A2
         text: 저장소 검사가 원격 비교까지 통과한다
