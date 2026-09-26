@@ -1,36 +1,8 @@
-task: VIS-2
-phase: execute
-base_commit: 3dff2ba15bfb17b61dc191cbecb2d888b5a28d32
-started_at: '2026-09-26T18:28:41Z'
-steps:
-- do: 90-shared.md 1절로 contract_ref INTERFACES를 읽고 Product Created, Vision Result,
-    Ground Truth 예시를 tests/fixtures/shared_d0c997c/ 세 파일로 옮긴다
-  check: A1
-  done: true
-  note: INTERFACES의 JSON 코드 블록(Product Created, Vision Result, Ground Truth)을 원문 텍스트
-    그대로 옮겼다. ground_truth.jsonl만 한 줄 + \n
-- do: tests/conftest.py에 shared_examples, gt_file, make_pc, gt_line (spec 04 2절 표)
-  check: fixture를 쓰는 테스트가 통과
-  done: true
-  note: gt_file.write는 str 외에 bytes 줄도 받는다(UTF-8 아닌 줄 테스트용). encode는 호출 때 import한다
-- do: payload.py(Rejected, _reject_constant, ProductCreated, parse_product_created,
-    build_vision_result, encode)와 test_payload.py
-  check: A2, A3
-  done: true
-  note: make_pc의 product_id를 위치 전용 인자로 바꿨다(override에 product_id를 줄 수 있게). UTF-8 strict
-    + NaN 거부 파싱은 loads_strict로 두고 ground_truth.py가 같은 함수를 쓴다. build 테스트는 defect·defect_type
-    속성만 가진 대역 객체로 조립을 본다(전체 연결은 test_process)
-- do: ground_truth.py(GroundTruth, Lookup, lookup)와 test_ground_truth.py
-  check: A4
-  done: true
-- do: process.py(Publish, Drop, process)와 test_process.py, 1,800줄 시간 측정
-  check: A5, A6
-  done: true
-  note: 1,800줄(약 777 KB) 평균 7.76 ms, 최대 8.03 ms(상한 50 ms)
-- do: paho import 검사와 make test
-  check: A7, A8
-  done: true
-  note: make test 131 passed
+task: null
+phase: null
+base_commit: null
+started_at: null
+steps: []
 attempts: {}
 evidence: {}
-next_action: agent.py verify
+next_action: null
