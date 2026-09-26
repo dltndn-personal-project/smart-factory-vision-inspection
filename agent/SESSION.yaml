@@ -23,11 +23,14 @@ steps:
   done: true
 - do: tests/test_broker.py 7개(@pytest.mark.docker, spec 04 3.2절)
   check: A2, A3, A4, A5, A6
-  done: false
+  done: true
+  note: A2~A6 통과(make docker-test 7 passed, 약 14초, 3회 반복 모두 통과). 실행하려고 Makefile docker-test를
+    먼저 만들었고 step 6에서 commit한다
 - do: 'paho import 검사, Makefile docker-test, agent/config.yaml verify {name: broker,
     run: "make docker-test"}, validate.py --remote'
   check: A7, A8, A9
   done: false
 attempts: {}
 evidence: {}
-next_action: 'step 5: tests/test_broker.py 7개 작성과 A2~A6 확인'
+next_action: 'step 6: Makefile docker-test, agent/config.yaml verify broker commit
+  후 validate.py --remote'
