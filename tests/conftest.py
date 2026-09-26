@@ -77,7 +77,7 @@ def gt_file(tmp_path: Path) -> GtFile:
 def make_pc() -> Callable[..., bytes]:
     """Product Created bytes. override 값이 None이면 그 키를 뺀다."""
 
-    def make(product_id: str, **override: Any) -> bytes:
+    def make(product_id: str, /, **override: Any) -> bytes:
         obj: dict[str, Any] = {
             "schema_version": 1,
             "product_id": product_id,

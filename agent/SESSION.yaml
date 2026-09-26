@@ -16,7 +16,10 @@ steps:
 - do: payload.py(Rejected, _reject_constant, ProductCreated, parse_product_created,
     build_vision_result, encode)와 test_payload.py
   check: A2, A3
-  done: false
+  done: true
+  note: make_pc의 product_id를 위치 전용 인자로 바꿨다(override에 product_id를 줄 수 있게). UTF-8 strict
+    + NaN 거부 파싱은 loads_strict로 두고 ground_truth.py가 같은 함수를 쓴다. build 테스트는 defect·defect_type
+    속성만 가진 대역 객체로 조립을 본다(전체 연결은 test_process)
 - do: ground_truth.py(GroundTruth, Lookup, lookup)와 test_ground_truth.py
   check: A4
   done: false
@@ -28,4 +31,4 @@ steps:
   done: false
 attempts: {}
 evidence: {}
-next_action: 'step 3: payload.py와 test_payload.py'
+next_action: 'step 4: ground_truth.py와 test_ground_truth.py'
