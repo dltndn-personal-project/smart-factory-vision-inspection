@@ -20,10 +20,12 @@ steps:
   done: true
 - do: tests/conftest.py(VIS-1이 쓰는 것만)
   check: make test
-  done: false
+  done: true
+  note: VIS-1 테스트가 쓰는 공용 fixture가 없어 conftest.py는 설명 docstring만 둔다. 나머지 fixture는 VIS-2·VIS-3이
+    더한다
 - do: 'agent/config.yaml verify에 {name: unit, run: "make test"} 추가, validate.py --remote'
   check: A5
   done: false
 attempts: {}
 evidence: {}
-next_action: 'step 5: tests/conftest.py'
+next_action: 'step 6: agent/config.yaml verify unit'
