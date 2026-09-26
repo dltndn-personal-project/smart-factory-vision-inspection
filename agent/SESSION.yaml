@@ -25,10 +25,11 @@ steps:
   done: true
 - do: process.py(Publish, Drop, process)와 test_process.py, 1,800줄 시간 측정
   check: A5, A6
-  done: false
+  done: true
+  note: 1,800줄(약 777 KB) 평균 7.76 ms, 최대 8.03 ms(상한 50 ms)
 - do: paho import 검사와 make test
   check: A7, A8
   done: false
 attempts: {}
 evidence: {}
-next_action: 'step 5: process.py와 test_process.py'
+next_action: 'step 6: paho import 검사와 make test'
