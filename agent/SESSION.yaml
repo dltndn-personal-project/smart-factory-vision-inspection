@@ -17,7 +17,7 @@ steps:
   done: true
 - do: logs.py(iso_ms, Logger.emit 공통 키 순서·수준 거름·flush), tests/test_logs.py
   check: A2
-  done: false
+  done: true
 - do: tests/conftest.py(VIS-1이 쓰는 것만)
   check: make test
   done: false
@@ -26,4 +26,4 @@ steps:
   done: false
 attempts: {}
 evidence: {}
-next_action: 'step 4: logs.py와 test_logs.py'
+next_action: 'step 5: tests/conftest.py'
