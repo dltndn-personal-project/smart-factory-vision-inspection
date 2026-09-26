@@ -9,7 +9,8 @@ steps:
 - do: Makefile venv(Python 3.12 확인 첫 줄, .venv/.installed stamp), test, .PHONY. make
     venv 실행
   check: make venv 성공, A4
-  done: false
+  done: true
+  note: make venv 첫 실행 약 2.7초(pip 캐시 사용). paho-mqtt 2.1.0, pytest 9.1.1 설치 확인
 - do: src/vision_inspection/__init__.py, config.py(Config frozen, load_config, ConfigError,
     표 순서 첫 오류), tests/test_config.py
   check: A1
@@ -25,4 +26,4 @@ steps:
   done: false
 attempts: {}
 evidence: {}
-next_action: 'step 2: Makefile venv·test'
+next_action: 'step 3: config.py와 test_config.py'
