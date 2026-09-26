@@ -1,0 +1,8 @@
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "--strict-markers"
+markers = [
+  "docker: Docker로 Mosquitto를 띄우는 연동 테스트",
+  "smoke: compose로 컨테이너 이미지를 빌드해 확인하는 테스트",
+]
