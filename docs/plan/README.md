@@ -118,12 +118,18 @@ evidence commit: <SHA> (agent/tasks/<ID>.yaml)
 
 책임자의 채팅 지시(spec D-02, 조율 결정 C-01)를 근거로 계획과 같은 PR에서 했다. 바꾼 파일은 `agent/PLAN.yaml`, `agent/tasks/BOOT-1.yaml`, `agent/tasks/SHARED-3.yaml`, `agent/tasks/SHARED-2.yaml`, `.github/CODEOWNERS`, `docs/ARCHITECTURE.md` 11.7절 표.
 
+이 PR의 절차 예외(4절 "task 하나 = PR 하나"의 예외, 계획 리뷰 2·3번):
+- BOOT-1은 조율 결정 C-09가 계획 PR에서 하도록 정했다.
+- SHARED-2·SHARED-3은 이미 이루어진 일(Shared PR #6 merge `d0c997c`, 2026-09-27 사용자 D-6 재결정)의 완료 기록만 남긴다(spec D-03). 새 구현이 없어 따로 PR을 만들 이유가 없고, 이 기록이 있어야 SHARED-5가 시작된다.
+- 사람 task(`owner: human`)는 도구로 시작할 수 없다(`agent.py` `actionable`). 사람의 결정·승인이 이미 문서로 남은 경우, 그 결정이 적힌 파일에서 acceptance 명령을 실행해 통과를 확인한 agent가 결과 파일을 쓰고 PR 본문에 근거(결정한 사람, 날짜, 파일 위치)를 적는다. 책임자는 이 계획 PR의 merge(조율 agent가 책임자 지시로 대행)로 그 기록을 승인한다. BOOT-1 A3도 같은 방식이다.
+
 1. `agent/PLAN.yaml`: 머리 주석에 승인 근거. M1의 exit criteria를 `00-overview.md` 1절 블록으로 바꾸고 M2~M4를 추가한다. SHARED-2·SHARED-3·SHARED-5를 `00-overview.md` 4절 블록으로 바꾸고(manual → command, D-03), VIS-1~4 블록을 `00-overview.md` 2절 표 순서로 붙인다. 모두 `proposed` 없음.
 2. `agent/tasks/BOOT-1.yaml`: `status: verifying`(A3 pending)을 `status: done`으로. `commit`은 그대로, `finished_at` 추가, `checks` 모두 `pass`. 근거 D-02, 조율 결정 C-09(simulator 선례).
-3. `agent/tasks/SHARED-3.yaml`(`owner: human`, 도구로 시작할 수 없음): A1 명령을 main `d3a1611`의 `docs/ARCHITECTURE.md`에서 실행해 통과를 확인하고 `status: done`, `commit: <그 main commit>`, `finished_at`, `checks: {A1: pass}`로 쓴다(simulator HUM-1 기록과 같은 모양).
-4. SHARED-2를 도구 절차로 실행한다: `agent.py start SHARED-2` → steps(11.7절 task 표 갱신) → `verify`(A1~A3, `agent-files`) → `finish`.
-5. `.github/CODEOWNERS`: `* @<component-책임자>`를 `* @dltndn`으로(조율 결정 C-15).
-6. `python3 agent/core/tools/validate.py --remote`와 `python3 agent/core/tools/agent.py next`(SHARED-5가 나와야 한다).
+3. `agent/tasks/SHARED-3.yaml`: A1 명령을 main `d3a1611`의 `docs/ARCHITECTURE.md`에서 실행해 통과를 확인하고 `status: done`, `commit: <그 main commit 전체 SHA>`, `finished_at`, `checks: {A1: pass}`로 쓴다(simulator HUM-1 기록과 같은 모양). 결정한 사람: 책임자(2026-09-27, ARCHITECTURE 11.3절 D-6 재결정).
+4. `.github/CODEOWNERS`: `* @<component-책임자>`를 `* @dltndn`으로(조율 결정 C-15).
+5. 1~4를 **먼저 commit**한다(`agent.py verify`는 commit되지 않은 비상태 파일이 있으면 거부한다).
+6. SHARED-2를 도구 절차로 실행한다: `agent.py start SHARED-2` → steps(11.7절 task 표 갱신) → commit → `phase execute` → commit → `verify`(A1~A3, `agent-files`) → `finish` → `agent/tasks/SHARED-2.yaml`과 `SESSION.yaml` commit.
+7. `python3 agent/core/tools/validate.py --remote`와 `python3 agent/core/tools/agent.py next`(SHARED-5가 나와야 한다).
 
 ## 7. 계획 바꾸기
 

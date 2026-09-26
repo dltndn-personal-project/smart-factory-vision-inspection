@@ -41,8 +41,8 @@
         text: venv·캐시·로컬 데이터가 git에 잡히지 않는다 (spec 03 7절)
         check: {type: command, run: "for p in .venv/.installed src/vision_inspection/__pycache__/x.pyc tests/__pycache__/x.pyc .pytest_cache/x .env data/ground_truth/products.jsonl; do git check-ignore -q \"$p\" || exit 1; done"}
       - id: A5
-        text: agent/config.yaml verify에 spec 04 4절의 unit 명령이 그대로 있고 통과한다
-        check: {type: command, run: "python3 -c \"import sys, yaml; v = yaml.safe_load(open('agent/config.yaml'))['verify']; sys.exit(0 if {'name': 'unit', 'run': 'make test'} in v else 1)\" && make test"}
+        text: agent/config.yaml verify에 spec 04 4절의 unit 명령이 그대로 있고, make test가 실제로 테스트를 모아 모두 통과한다(pytest 요약이 'N passed'로 시작)
+        check: {type: command, run: "python3 -c \"import sys, yaml; v = yaml.safe_load(open('agent/config.yaml'))['verify']; sys.exit(0 if {'name': 'unit', 'run': 'make test'} in v else 1)\" && out=$(make test 2>&1) && printf '%s\\n' \"$out\" | grep -Eq '^[0-9]+ passed'"}
     size: M
 ```
 
@@ -87,8 +87,8 @@
         text: docs/COMPONENT.md 실행 절이 실제 명령(docker compose up -d --build --wait, make smoke, 로컬 실행)을 적고 미정 표시가 없다 (C-09)
         check: {type: command, run: "grep -q 'docker compose up -d --build --wait' docs/COMPONENT.md && grep -q 'make smoke' docs/COMPONENT.md && grep -q 'python -m vision_inspection' docs/COMPONENT.md && ! grep -q '<미정' docs/COMPONENT.md"}
       - id: A7
-        text: agent/config.yaml verify에 spec 04 4절 네 항목(agent-files, unit, broker, smoke)이 그대로 있고 smoke가 통과한다 (C-09. 나머지 셋은 verify가 함께 돌린다)
-        check: {type: command, run: "python3 -c \"import sys, yaml; v = yaml.safe_load(open('agent/config.yaml'))['verify']; need = [{'name': 'agent-files', 'run': 'python3 agent/core/tools/validate.py'}, {'name': 'unit', 'run': 'make test'}, {'name': 'broker', 'run': 'make docker-test'}, {'name': 'smoke', 'run': 'make smoke'}]; sys.exit(0 if all(n in v for n in need) else 1)\" && make smoke"}
+        text: agent/config.yaml verify가 spec 04 4절 네 항목(agent-files, unit, broker, smoke)과 그 순서 그대로이고, make smoke가 실제로 테스트를 모아 통과한다 (C-09. 나머지 셋은 verify가 함께 돌린다)
+        check: {type: command, run: "python3 -c \"import sys, yaml; v = yaml.safe_load(open('agent/config.yaml'))['verify']; need = [{'name': 'agent-files', 'run': 'python3 agent/core/tools/validate.py'}, {'name': 'unit', 'run': 'make test'}, {'name': 'broker', 'run': 'make docker-test'}, {'name': 'smoke', 'run': 'make smoke'}]; sys.exit(0 if v == need else 1)\" && out=$(make smoke 2>&1) && printf '%s\\n' \"$out\" | grep -Eq '^[0-9]+ passed'"}
     size: M
 ```
 

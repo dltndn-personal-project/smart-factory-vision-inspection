@@ -32,13 +32,13 @@
         text: 잘못된 설정(MQTT_URL=http://h)으로 python -m vision_inspection을 띄우면 10초 안에 종료 코드 2로 끝나고 마지막 줄이 error·invalid_config다 (C-05 일부)
         check: {type: command, run: "make venv >/dev/null && .venv/bin/python -m pytest -q tests/test_main.py::test_invalid_config_exits_2"}
       - id: A2
-        text: 실제 Mosquitto에서 Shared 예시 Product Created에 대해 5초 안에 Shared 예시와 같은 Vision Result 하나가 qos 1·retain false로 오고, received와 published(latency_ms int 0 이상) 로그가 남는다 (C-02, C-04, C-06)
+        text: 실제 Mosquitto에서 Shared 예시 Product Created에 대해 5초 안에 Shared 예시와 같은 Vision Result 하나가 qos 1로 오고, received와 published(latency_ms int 0 이상) 로그가 남으며, 그 뒤 새 구독자가 retained 결과를 받지 않는다(retain false 발행) (C-02, C-04, C-06)
         check: {type: command, run: "make venv >/dev/null && .venv/bin/python -m pytest -q tests/test_broker.py::test_publishes_shared_example"}
       - id: A3
         text: 잘못된 입력 8종 뒤 정상 sentinel을 보내면 결과는 sentinel 하나뿐이고 dropped reason이 보낸 순서와 같으며, Ground Truth 파일이 나중에 생겨도 상태 없이 이어서 처리한다 (C-03, C-04)
         check: {type: command, run: "make venv >/dev/null && .venv/bin/python -m pytest -q tests/test_broker.py::test_invalid_inputs_not_published tests/test_broker.py::test_ground_truth_created_later"}
       - id: A4
-        text: Broker 재시작 뒤 15초 안에 다시 connected(기동 확인 파일 다시 생성)되어 결과를 발행하고, Broker보다 먼저 떠도 connect_failed 뒤 15초 안에 연결되며, SIGTERM에 5초 안 종료 코드 0·마지막 줄 stopped·기동 확인 파일 삭제다 (C-05)
+        text: Broker 재시작 때 disconnected와 함께 기동 확인 파일이 지워지고, 15초 안에 다시 connected(기동 확인 파일 다시 생성)되어 결과를 발행하고, Broker보다 먼저 떠도 connect_failed 뒤 15초 안에 연결되며, SIGTERM에 5초 안 종료 코드 0·마지막 줄 stopped·기동 확인 파일 삭제다 (C-05)
         check: {type: command, run: "make venv >/dev/null && .venv/bin/python -m pytest -q tests/test_broker.py::test_broker_restart_resubscribes tests/test_broker.py::test_starts_before_broker tests/test_broker.py::test_sigterm_exits_0"}
       - id: A5
         text: 1,800줄 Ground Truth에서 30개 Vision Result 지연이 모두 2초 이하이고 중앙값 0.5초 이하이며 측정값을 출력한다 (C-07 연동, D-21)
@@ -50,8 +50,8 @@
         text: paho를 import하는 모듈은 src/vision_inspection/app.py 하나다 (spec 02 1절)
         check: {type: command, run: "test -f src/vision_inspection/app.py && test -f src/vision_inspection/__main__.py && test \"$(grep -rlE '^[[:space:]]*(import|from)[[:space:]]+paho' src)\" = src/vision_inspection/app.py"}
       - id: A8
-        text: agent/config.yaml verify에 spec 04 4절의 broker 명령이 그대로 있고 통과한다
-        check: {type: command, run: "python3 -c \"import sys, yaml; v = yaml.safe_load(open('agent/config.yaml'))['verify']; sys.exit(0 if {'name': 'broker', 'run': 'make docker-test'} in v else 1)\" && make docker-test"}
+        text: agent/config.yaml verify에 spec 04 4절의 broker 명령이 그대로 있고, make docker-test가 실제로 테스트를 모아 모두 통과한다(pytest 요약이 'N passed'로 시작)
+        check: {type: command, run: "python3 -c \"import sys, yaml; v = yaml.safe_load(open('agent/config.yaml'))['verify']; sys.exit(0 if {'name': 'broker', 'run': 'make docker-test'} in v else 1)\" && out=$(make docker-test 2>&1) && printf '%s\\n' \"$out\" | grep -Eq '^[0-9]+ passed'"}
       - id: A9
         text: 단위 테스트 전체가 통과한다
         check: {type: command, run: "make test"}

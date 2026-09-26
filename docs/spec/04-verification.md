@@ -47,10 +47,10 @@
 
 | 테스트 | 절차와 통과 기준 |
 |---|---|
-| `test_publishes_shared_example` | Shared 예시 Ground Truth 줄을 쓰고 서비스가 `connected`를 남긴 뒤 예시 Product Created를 QoS 1로 발행 → 5초 안에 결과 하나. dict가 Shared 예시 Vision Result와 같고 `qos == 1`, `retain is False`. 로그에 `received`, `published`(`latency_ms` int ≥ 0) (C-04) |
+| `test_publishes_shared_example` | Shared 예시 Ground Truth 줄을 쓰고 서비스가 `connected`를 남긴 뒤 예시 Product Created를 QoS 1로 발행 → 5초 안에 결과 하나. dict가 Shared 예시 Vision Result와 같고 `qos == 1`, `retain is False`. 로그에 `received`, `published`(`latency_ms` int ≥ 0). 그 뒤 새 client가 `factory/vision/result`를 구독해 SUBACK 뒤 1초 동안 retained 메시지를 받지 않는다(이미 구독 중인 MQTT 3.1.1 client는 발행자의 retain 여부와 무관하게 retain 0으로 받으므로, retain false 발행은 새 구독자로 확인한다. 계획 리뷰 4번) (C-04) |
 | `test_invalid_inputs_not_published` | 이 순서로 발행: `invalid_json`, `schema_version` 2, 잘못된 `product_id`, 잘못된 timestamp, 잘못된 `image_path`, 줄 없음, 중복 줄, 모순 줄, 정상 sentinel → 결과는 sentinel 하나뿐. `dropped` 로그의 `reason`이 앞 8개와 같은 순서 (C-03, C-04) |
 | `test_ground_truth_created_later` | 파일 없이 발행 → `ground_truth_unreadable`. 파일을 만든 뒤 다른 제품 발행 → 결과 수신(상태를 기억하지 않음) |
-| `test_broker_restart_resubscribes` | `fixed_port_broker`. `connected` 뒤 `docker restart` → `disconnected`, 다시 `connected`가 restart 명령이 끝난 뒤 15초 안. 기동 확인 파일이 다시 있음. 새 Product Created → 결과 수신 (C-05) |
+| `test_broker_restart_resubscribes` | `fixed_port_broker`. `connected` 뒤 `docker restart` → `disconnected`(그 로그 뒤 기동 확인 파일 없음, 02 5절), 다시 `connected`가 restart 명령이 끝난 뒤 15초 안. 기동 확인 파일이 다시 있음. 새 Product Created → 결과 수신 (C-05) |
 | `test_starts_before_broker` | 비어 있는 포트로 서비스 시작 → 2초 뒤 기동 확인 파일 없음, `connect_failed` 1회 이상. 그 포트로 broker 시작 → 15초 안에 `connected`, 결과 수신 (C-05) |
 | `test_sigterm_exits_0` | `connected` 뒤 SIGTERM → 5초 안에 종료 코드 0, 마지막 줄 `stopped`(`signal: "SIGTERM"`), 기동 확인 파일 없음 (C-05) |
 | `test_latency_1800_lines` | 1,800줄 파일. 마지막 30개 제품의 Product Created를 0.1초 간격으로 발행 → 30개 모두 수신. 각 결과의 지연(자기 Product Created 발행 호출 → 도착)이 모두 2초 이하이고 중앙값이 0.5초 이하. 측정값(중앙값, 최대)을 출력한다 (C-07) |
