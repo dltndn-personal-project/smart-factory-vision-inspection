@@ -16,7 +16,9 @@ steps:
   done: true
 - do: Makefile smoke 대상과 .PHONY. make smoke 두 번(첫 빌드, 캐시 뒤) 통과와 시간 기록
   check: make smoke 출력이 'N passed'
-  done: false
+  done: true
+  note: make smoke 2회 모두 1 passed, 각 약 9.7초(이미지 태그 삭제 뒤 첫 실행 포함; 기반 이미지는 로컬에 있었음).
+    docker build --no-cache 약 2.1초. spec 예상(첫 1~2분, 이후 약 20초)보다 빠름
 - do: docs/COMPONENT.md 실행·검증 환경 절을 실제 명령으로 갱신
   check: A6
   done: false
@@ -26,4 +28,4 @@ steps:
   done: false
 attempts: {}
 evidence: {}
-next_action: 'step 4: Makefile smoke 대상 추가 후 make smoke 두 번'
+next_action: 'step 5: docs/COMPONENT.md 실행·검증 환경 절 갱신'

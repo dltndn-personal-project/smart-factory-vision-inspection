@@ -1,4 +1,4 @@
-.PHONY: venv test docker-test
+.PHONY: venv test docker-test smoke
 
 venv: .venv/.installed
 
@@ -11,3 +11,6 @@ test: venv
 
 docker-test: venv
 	.venv/bin/python -m pytest -q -m docker
+
+smoke: venv
+	.venv/bin/python -m pytest -q -m smoke
