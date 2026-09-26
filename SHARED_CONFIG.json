@@ -1,6 +1,6 @@
 {
   "repository": "dltndn-personal-project/smart-factory-shared-repository",
   "component": "vision-inspection",
-  "contract_ref": null,
+  "contract_ref": "d0c997c97129141d9853a42ce6e0d1f8f7309ae9",
   "process_ref": "6bcd2aad8e374a7e96f816051585a49cb5e30f86"
 }

@@ -10,6 +10,7 @@
 > - `SHARED_CONFIG.json`의 `contract_ref`가 `null`(계약 미채택)이라서 위 commit은 **참고용으로만** 읽었다(`agent/core/process/90-shared.md` 2절 방식). 이 문서의 계약 매핑은 구현 기준이 아니다.
 > - **2026-09-27 갱신**: Shared `main`이 `8b1efb06325f711814152f4867d86e4413b4a404`로 바뀌었다. I-1·I-4 게시, 승인 책임자 @dltndn 지정(ISSUE-95d74411), factory-simulator 계약 반영(ISSUE-9f81b8ac, ISSUE-fde005ee)이 merge되었다. 이 변경으로 Product Created에는 결함 정보가 없고(`schema_version` 1, 밀리초 timestamp), runtime Ground Truth는 `ground_truth/products.jsonl`에 두되 평가·검증 전용이며 MQTT로 전달하지 않는다. 그래서 4.2절의 별도 Topic 제안(D-6)은 다시 결정해야 했다(아래 D-6 재결정). 범위 축소와 Vision Result를 담은 첫 DOCUMENT_CHANGE 초안(`ISSUE-e156d982…`, Shared PR #5)은 merge되지 않고 닫혔다. 이 문서의 3~4절 계약 매핑은 아직 `6bcd2aad` 기준이며, 계약 채택(SHARED-5) 때 다시 맞춘다.
 > - **D-6 재결정 (사용자, 2026-09-27)**: 불량 정보 경로는 (b)로 한다. Vision은 Product Created를 받은 뒤 `ground_truth/products.jsonl`에서 같은 `product_id` 줄을 읽어 `defect`, `defect_type`을 얻는다. factory-simulator 구현은 바꾸지 않고, Ground Truth 사용 목적에 Vision pass-through 예외를 추가한다. 별도 MQTT Topic 안은 폐기했다. Shared PR #5는 사용자가 닫았고, 범위 축소·입력 경로·Vision Result를 한 DOCUMENT_CHANGE `ISSUE-c8fad59b-796c-42aa-b969-be0be65eae43`(Shared PR #6)로 다시 올렸고, 2026-09-26T16:08:12Z에 merge되었다(Shared merge commit `d0c997c97129141d9853a42ce6e0d1f8f7309ae9`). 이 문서의 3~4절 계약 매핑은 SHARED-5(contract_ref 채택) 때 `d0c997c` 기준으로 맞춘다. 1.5, 2, 3, 4.1, 4.2, 4.4, 5.1, 6.1, 9절은 이 결정으로 고쳤다.
+> - **contract_ref 채택 (SHARED-5)**: 2026-09-27 Shared d0c997c97129141d9853a42ce6e0d1f8f7309ae9를 contract_ref로 채택했다(`SHARED_CONFIG.json`, `90-shared.md` 1절). 채택 전에 이 commit의 INTERFACES(Product Created, Vision Result, Image Reference, Ground Truth)·CONVENTIONS·ARCHITECTURE 4.3절 현재 범위를 원격으로 읽어 `docs/spec/AGREEMENTS.md` 요약과 다르지 않음을 확인했다(Shared main도 같은 commit). 위 이력 문단의 "아직 null"은 당시 기록이다. 이후 구현 task는 이 contract_ref로 Shared 문서를 읽는다(spec D-05).
 
 ## 0. 문서 안내
 
@@ -216,7 +217,7 @@ sequenceDiagram
 
 ## 4. 외부 인터페이스와 Shared 계약 매핑
 
-Shared `d0c997c`에서 이 Component가 쓰는 Interface(Product Created, Vision Result)와 파일 Interface(Ground Truth, Image Reference)는 모두 **확정**이다(I 첫 문단, Shared PR #6). 아래 표가 그 확정본의 요약이며, 다르면 Shared가 기준이다. 이 저장소의 `contract_ref`는 아직 null이다. 계약 채택(SHARED-5)은 이 commit으로 한다.
+Shared `d0c997c`에서 이 Component가 쓰는 Interface(Product Created, Vision Result)와 파일 Interface(Ground Truth, Image Reference)는 모두 **확정**이다(I 첫 문단, Shared PR #6). 아래 표가 그 확정본의 요약이며, 다르면 Shared가 기준이다. 이 저장소는 SHARED-5(2026-09-27)에서 이 commit(`d0c997c97129141d9853a42ce6e0d1f8f7309ae9`)을 `contract_ref`로 채택했다. 구현은 이 commit의 Shared 문서를 기준으로 한다.
 
 ### 4.1 MQTT Topic
 
@@ -557,7 +558,7 @@ R-11(JSON Schema 라이브러리)은 L-9 해소로 삭제했다(2026-09-27 리�
 
 ### 11.6 이 저장소 절차상 남은 일
 
-- 필요한 계약 변경(Q-19~Q-25)은 Shared PR #6(`d0c997c`)으로 merge되었다. `contract_ref`는 아직 null이므로, 구현 전에 SHARED-5에서 `d0c997c`를 `contract_ref`로 채택한다(`90-shared.md`). 4절 매핑은 2026-09-27 리뷰에서 이 commit에 맞췄다.
+- 필요한 계약 변경(Q-19~Q-25)은 Shared PR #6(`d0c997c`)으로 merge되었다. 구현 전에 SHARED-5(2026-09-27)에서 `d0c997c`를 `contract_ref`로 채택했다(`90-shared.md` 1절). 4절 매핑은 2026-09-27 리뷰에서 이 commit에 맞췄고, 채택 때 다시 확인했다.
 - 이 저장소가 Shared에 더 제기할 항목은 없다(11.1절). 새로 제기할 일이 생기면 `90-shared.md` 5절과 Shared `docs/SHARED_WORKFLOW.md`에 따른다.
 - `docs/COMPONENT.md`의 `<미정>` 슬롯, 검증 명령, 첫 도메인 milestone은 plan 단계의 BOOT-1 task에서 다룬다(조율 결정 C-09).
 - Shared Issue 6건(`d0c997c` 색인)은 SHARED-1에서 검토해 `SHARED_ISSUE_STATUS.yaml`에 기록했다(11.7절 검토 기록). `affected` 3건은 계약 채택과 구현에서 처리한다.
@@ -595,7 +596,7 @@ R-11(JSON Schema 라이브러리)은 L-9 해소로 삭제했다(2026-09-27 리�
 | SHARED-1 | I-1, I-4 MESSAGE 게시와 게시 후 기록 | agent | 게시 완료. 2026-09-27 Shared 검토로 색인 6건을 `SHARED_ISSUE_STATUS.yaml`에 기록(`d0c997c` 기준) |
 | SHARED-3 | 불량 정보 전달 경로 결정 (D-6 재결정) | human | 완료 (2026-09-27 책임자 결정 (b), Shared PR #6). A1을 자동 검사로 바꿔 계획 PR에서 기록 |
 | SHARED-2 | DOC-1(범위 축소·입력 경로·Vision Result) 게시와 게시 후 기록 | agent | 완료 (Shared PR #6, `d0c997c`). DOC-1 기록은 SHARED-1 검토에서 색인 순서대로 함께 남겼다. A2를 자동 검사로 바꿔 계획 PR에서 도구 절차로 기록 |
-| SHARED-5 | merge된 계약 commit을 `contract_ref`로 채택하고 이 문서의 매핑을 다시 확인 | agent | 다음 task. `d0c997c`를 채택한다(`docs/plan/00-overview.md` 4절) |
+| SHARED-5 | merge된 계약 commit을 `contract_ref`로 채택하고 이 문서의 매핑을 다시 확인 | agent | 완료 (2026-09-27 `d0c997c` 채택, 4절 매핑 재확인. `docs/plan/00-overview.md` 4절) |
 
 SHARED-4(DOC-2 별도 게시)는 DOC-1에 합쳐 PLAN에서 뺐다(승인 전 proposed task).
 
