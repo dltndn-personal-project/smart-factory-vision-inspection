@@ -16,6 +16,7 @@
 |---|---|
 | 무엇을 만드나, 언제 끝나나, 시연에서의 역할 | `00-overview.md` |
 | PLAN에 milestone·task 추가, BOOT-1, SHARED-n 정리 | `00-overview.md` 6절, `04-verification.md` 4·7절, `DECISIONS.md` 1절 |
+| task 실행 순서·절차, 멈춤, merge (계획) | `docs/plan/README.md` |
 | `contract_ref` 채택(SHARED-5) | `DECISIONS.md` D-05, `AGREEMENTS.md` 머리말 |
 | Product Created 검증, Ground Truth 조회, Vision Result 조립, 미발행 `reason` | `01-processing.md` |
 | MQTT 연결·구독·발행, 재연결, 발행 완료 | `02-service.md` 1~3절 |
