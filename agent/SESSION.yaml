@@ -14,7 +14,7 @@ steps:
 - do: src/vision_inspection/__init__.py, config.py(Config frozen, load_config, ConfigError,
     표 순서 첫 오류), tests/test_config.py
   check: A1
-  done: false
+  done: true
 - do: logs.py(iso_ms, Logger.emit 공통 키 순서·수준 거름·flush), tests/test_logs.py
   check: A2
   done: false
@@ -26,4 +26,4 @@ steps:
   done: false
 attempts: {}
 evidence: {}
-next_action: 'step 3: config.py와 test_config.py'
+next_action: 'step 4: logs.py와 test_logs.py'
