@@ -19,10 +19,11 @@ steps:
 - do: docs/ARCHITECTURE.md 상단 인용 블록 끝에 채택 기록 줄, 4절 첫 문단을 채택 사실로, 11.6·11.7절 task 표의
     SHARED-5 상태를 완료로 바꾼다
   check: A3
-  done: false
+  done: true
+  note: 상단 이력 문단(4행 "아직 null")과 11.7절 Shared 검토 기록 표는 당시 기록이라 고치지 않았다(계획 단계 개요 3)
 - do: validate.py --remote 실행
   check: A2
   done: false
 attempts: {}
 evidence: {}
-next_action: 'step 3: docs/ARCHITECTURE.md 채택 기록'
+next_action: 'step 4: validate.py --remote'
