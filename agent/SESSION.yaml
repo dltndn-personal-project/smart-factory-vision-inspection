@@ -11,7 +11,11 @@ steps:
     관련 절(Product Created, Vision Result, Image Reference, Ground Truth, CONVENTIONS)이
     spec AGREEMENTS.md 요약과 다르지 않은지 확인한다. 다르면 멈춘다
   check: 대조 결과를 note에 기록
-  done: false
+  done: true
+  note: d0c997c(= 2026-09-27 조회 시 Shared main)의 INTERFACES Product Created·Vision
+    Result·Image Reference·Ground Truth, CONVENTIONS 전체, ARCHITECTURE 4.3절 현재 범위·8절
+    예외를 읽어 AGREEMENTS.md V-01~V-04·V-07과 대조했다. 차이 없음(gradcam/ 쓰기 권한 서술은 AGREEMENTS
+    V-04·조율 결정 C-16이 이미 모델 판정 복귀 조건으로 설명)
 - do: docs/ARCHITECTURE.md 상단 인용 블록 끝에 채택 기록 줄, 4절 첫 문단을 채택 사실로, 11.6·11.7절 task 표의
     SHARED-5 상태를 완료로 바꾼다
   check: A3
@@ -21,4 +25,4 @@ steps:
   done: false
 attempts: {}
 evidence: {}
-next_action: 'step 2: d0c997c Shared 문서와 AGREEMENTS.md 대조'
+next_action: 'step 3: docs/ARCHITECTURE.md 채택 기록'
