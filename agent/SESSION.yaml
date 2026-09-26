@@ -17,7 +17,8 @@ steps:
     c8fad59b). validate.py --remote 통과
 - do: docs/ARCHITECTURE.md 11.7절 게시 기록·PLAN 연결 상태와 Shared 검토 기록 위치를 갱신한다
   check: A1
-  done: false
+  done: true
+  note: 게시 기록(I-1, I-4, DOC-1)은 이미 채워져 있어 상태 표와 검토 기록 표만 추가
 attempts: {}
 evidence: {}
-next_action: 'step 3: ARCHITECTURE.md 11.7절 상태와 Shared 검토 기록 위치 갱신'
+next_action: agent.py verify

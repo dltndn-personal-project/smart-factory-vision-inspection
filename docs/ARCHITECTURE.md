@@ -573,9 +573,9 @@ Shared에는 관측성 요구가 없다. 아래는 모두 [가정]이며 디버�
 
 | task | 내용 | 담당 | 상태 |
 |---|---|---|---|
-| SHARED-1 | I-1, I-4 MESSAGE 게시와 게시 후 기록 | agent | 게시 완료, 기록 대기 |
-| SHARED-3 | 불량 정보 전달 경로 결정 (D-6 재결정) | human | 결정 완료 (2026-09-27, (b)) |
-| SHARED-2 | DOC-1(범위 축소·입력 경로·Vision Result) 게시와 게시 후 기록 | agent | 게시 완료 (Shared PR #6, `d0c997c`), 기록 대기 |
+| SHARED-1 | I-1, I-4 MESSAGE 게시와 게시 후 기록 | agent | 게시 완료. 2026-09-27 Shared 검토로 색인 6건을 `SHARED_ISSUE_STATUS.yaml`에 기록(`d0c997c` 기준) |
+| SHARED-3 | 불량 정보 전달 경로 결정 (D-6 재결정) | human | 결정 완료 (2026-09-27, (b), Shared PR #6). 사람의 수동 확인(A1) 기록 대기 |
+| SHARED-2 | DOC-1(범위 축소·입력 경로·Vision Result) 게시와 게시 후 기록 | agent | 게시 완료 (Shared PR #6, `d0c997c`). DOC-1 기록은 SHARED-1 검토에서 색인 순서대로 함께 남겼다. task는 SHARED-3 완료 뒤 시작할 수 있다 |
 | SHARED-5 | merge된 계약 commit을 `contract_ref`로 채택하고 이 문서의 매핑을 다시 확인 | agent | 채택 대상 `d0c997c` 이후. Shared 검토 요청 대기 |
 
 SHARED-4(DOC-2 별도 게시)는 DOC-1에 합쳐 PLAN에서 뺐다(승인 전 proposed task).
@@ -587,6 +587,17 @@ Issue가 Shared main에 merge되면 "미게시"를 실제 Issue ID(`ISSUE-<UUID>
 - I-1: ISSUE-a47146af-bbf3-4aa3-bfed-5cdcc64a16b5
 - I-4: ISSUE-63f6789a-a26b-42a4-8b3c-3dcfeaa07e1f
 - DOC-1: ISSUE-c8fad59b-796c-42aa-b969-be0be65eae43 (Shared PR #6, merge commit d0c997c97129141d9853a42ce6e0d1f8f7309ae9, 2026-09-26T16:08:12Z. 닫힌 PR #5의 ISSUE-e156d982는 미게시로 폐기)
+
+**Shared 검토 기록 (2026-09-27, `d0c997c` 기준, `SHARED_ISSUE_STATUS.yaml`)**
+
+| Issue | 상태 | 요지 |
+|---|---|---|
+| I-1 `a47146af` | no_impact | 요청한 조치가 95d74411·9f81b8ac·fde005ee·c8fad59b로 모두 처리됨. 영향은 c8fad59b에서 추적 |
+| I-4 `63f6789a` | no_impact | 대부분 답이 정해짐. 남은 Q-11·Q-17·지연 목표는 현재 범위 구현에 필요 없음 |
+| `95d74411` 승인 책임자 지정 | no_impact | 거버넌스 변경, 구현 영향 없음 |
+| `9f81b8ac` factory-simulator 계약 | affected | Product Created 파싱, 이미지·점 파일 전제, Ground Truth 파일 형식, CONVENTIONS 공통 규칙을 구현에 반영 |
+| `fde005ee` Component별 조치 | affected | vision 1·2항 구현 반영, 3항 영향 없음, 4항 c8fad59b로 계약화, 5항 읽기 전용 마운트 |
+| DOC-1 `c8fad59b` | affected | 구현 기준. contract_ref 채택(SHARED-5)과 구현·검증이 남음 |
 
 ---
 
