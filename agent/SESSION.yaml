@@ -1,35 +1,8 @@
-task: VIS-3
-phase: execute
-base_commit: 166ee718e80a90387d11b8539ac6abec42088831
-started_at: '2026-09-26T18:35:09Z'
-steps:
-- do: 'app.py: paho client 생성·콜백 등록·reconnect_delay_set(1,10)·connect_async·loop_forever(retry_first_connection=True),
-    on_connect 구독과 sub_mid, on_subscribe에서 기동 확인 파일·connected, 실패·끊김 콜백, 콜백 예외 처리
-    (spec 02 1·5절)'
-  check: .venv/bin/python -c "import vision_inspection.app" (PYTHONPATH=src)
-  done: true
-  note: step 2의 on_message·on_publish와 같은 파일이라 한 commit으로 함께 작성했다
-- do: 'app.py on_message·on_publish: process() 호출, warning·dropped·publish() rc 처리(MQTT_ERR_NO_CONN
-    수용), pending[mid], published.latency_ms (spec 02 2·3절, D-13)'
-  check: make test
-  done: true
-- do: '__main__.py: main() -> int, 설정 오류 2, 신호 처리기 → disconnect(), stopped 0, 예상 밖
-    예외 1 (spec 02 6절, D-16). tests/test_main.py'
-  check: A1
-  done: true
-- do: 'conftest.py: broker, fixed_port_broker, service(정리 단계 로그 검사), results(SUBACK
-    뒤 반환). 컨테이너 이름 vision-inspection-test-<uuid8> (spec 04 2절)'
-  check: .venv/bin/python -m pytest -q --collect-only -m docker
-  done: true
-- do: tests/test_broker.py 7개(@pytest.mark.docker, spec 04 3.2절)
-  check: A2, A3, A4, A5, A6
-  done: true
-  note: A2~A6 통과(make docker-test 7 passed, 약 14초, 3회 반복 모두 통과). 실행하려고 Makefile docker-test를
-    먼저 만들었고 step 6에서 commit한다
-- do: 'paho import 검사, Makefile docker-test, agent/config.yaml verify {name: broker,
-    run: "make docker-test"}, validate.py --remote'
-  check: A7, A8, A9
-  done: true
+task: null
+phase: null
+base_commit: null
+started_at: null
+steps: []
 attempts: {}
 evidence: {}
-next_action: agent.py verify
+next_action: null
