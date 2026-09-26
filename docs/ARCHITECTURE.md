@@ -8,7 +8,7 @@
 > - 참고한 Shared 기준: `dltndn-personal-project/smart-factory-shared-repository`의 `main` 브랜치 commit `6bcd2aad8e374a7e96f816051585a49cb5e30f86` (2026-09-24T02:11:37Z). 읽은 문서는 `docs/ARCHITECTURE.md`, `docs/INTERFACES.md`, `docs/CONVENTIONS.md`
 > - `SHARED_CONFIG.json`의 `contract_ref`가 `null`(계약 미채택)이라서 위 commit은 **참고용으로만** 읽었다(`agent/core/process/90-shared.md` 2절 방식). 이 문서의 계약 매핑은 구현 기준이 아니다.
 > - **2026-09-27 갱신**: Shared `main`이 `8b1efb06325f711814152f4867d86e4413b4a404`로 바뀌었다. I-1·I-4 게시, 승인 책임자 @dltndn 지정(ISSUE-95d74411), factory-simulator 계약 반영(ISSUE-9f81b8ac, ISSUE-fde005ee)이 merge되었다. 이 변경으로 Product Created에는 결함 정보가 없고(`schema_version` 1, 밀리초 timestamp), runtime Ground Truth는 `ground_truth/products.jsonl`에 두되 평가·검증 전용이며 MQTT로 전달하지 않는다. 그래서 4.2절의 별도 Topic 제안(D-6)은 다시 결정해야 했다(아래 D-6 재결정). 범위 축소와 Vision Result를 담은 첫 DOCUMENT_CHANGE 초안(`ISSUE-e156d982…`, Shared PR #5)은 merge되지 않고 닫혔다. 이 문서의 3~4절 계약 매핑은 아직 `6bcd2aad` 기준이며, 계약 채택(SHARED-5) 때 다시 맞춘다.
-> - **D-6 재결정 (사용자, 2026-09-27)**: 불량 정보 경로는 (b)로 한다. Vision은 Product Created를 받은 뒤 `ground_truth/products.jsonl`에서 같은 `product_id` 줄을 읽어 `defect`, `defect_type`을 얻는다. factory-simulator 구현은 바꾸지 않고, Ground Truth 사용 목적에 Vision pass-through 예외를 추가한다. 별도 MQTT Topic 안은 폐기했다. Shared PR #5는 사용자가 닫았고, 범위 축소·입력 경로·Vision Result를 한 DOCUMENT_CHANGE `ISSUE-c8fad59b-796c-42aa-b969-be0be65eae43`(Shared PR #6, merge 대기)로 다시 올렸다. 1.5, 2, 3, 4.1, 4.2, 4.4, 5.1, 6.1, 9절은 이 결정으로 고쳤다.
+> - **D-6 재결정 (사용자, 2026-09-27)**: 불량 정보 경로는 (b)로 한다. Vision은 Product Created를 받은 뒤 `ground_truth/products.jsonl`에서 같은 `product_id` 줄을 읽어 `defect`, `defect_type`을 얻는다. factory-simulator 구현은 바꾸지 않고, Ground Truth 사용 목적에 Vision pass-through 예외를 추가한다. 별도 MQTT Topic 안은 폐기했다. Shared PR #5는 사용자가 닫았고, 범위 축소·입력 경로·Vision Result를 한 DOCUMENT_CHANGE `ISSUE-c8fad59b-796c-42aa-b969-be0be65eae43`(Shared PR #6)로 다시 올렸고, 2026-09-26T16:08:12Z에 merge되었다(Shared merge commit `d0c997c97129141d9853a42ce6e0d1f8f7309ae9`). 이 문서의 3~4절 계약 매핑은 SHARED-5(contract_ref 채택) 때 `d0c997c` 기준으로 맞춘다. 1.5, 2, 3, 4.1, 4.2, 4.4, 5.1, 6.1, 9절은 이 결정으로 고쳤다.
 
 ## 0. 문서 안내
 
@@ -561,7 +561,7 @@ Shared에는 관측성 요구가 없다. 아래는 모두 [가정]이며 디버�
 | 1 | I-1 범위 축소와 성능 기준 | MESSAGE | 범위 축소 제안, 출제자 승인 근거, 승인 책임자 지정 요청 | Q-19, Q-23 | factory-simulator, factory-operations, integration | 게시됨 (Shared PR #1) |
 | 2 | I-4 명확화 질문 모음 | MESSAGE | Q-6, 7, 9, 11, 12, 14, 15, 17 | 같음 | factory-simulator, factory-operations, integration | 게시됨 (Shared PR #1). Q-6, 7, 9, 12, 14 일부, 15는 ISSUE-9f81b8ac·fde005ee가 답했다 |
 | - | (초안) 범위 축소와 Vision Result | DOCUMENT_CHANGE | ISSUE-e156d982, Shared PR #5 | - | - | 닫힘(merge 안 됨, 미게시). ID는 재사용하지 않는다 |
-| 3 | DOC-1 범위 축소, Ground Truth 입력 경로, Vision Result 확정 (원래 I-1 후속 + I-2 + I-3) | DOCUMENT_CHANGE + 문서 수정 | ARCHITECTURE 2·3.4·4.3(현재 범위, 입력 경로)·4.4·7.2·8·17·18·19.1, INTERFACES Vision Result(입력·처리·오류)·Image Reference·Ground Truth 예외·integration 검사, CONVENTIONS Ground Truth | Q-19~Q-25, Q-6, Q-15 | factory-simulator, factory-operations, integration | PR 열림 (Shared PR #6, merge 대기) |
+| 3 | DOC-1 범위 축소, Ground Truth 입력 경로, Vision Result 확정 (원래 I-1 후속 + I-2 + I-3) | DOCUMENT_CHANGE + 문서 수정 | ARCHITECTURE 2·3.4·4.3(현재 범위, 입력 경로)·4.4·7.2·8·17·18·19.1, INTERFACES Vision Result(입력·처리·오류)·Image Reference·Ground Truth 예외·integration 검사, CONVENTIONS Ground Truth | Q-19~Q-25, Q-6, Q-15 | factory-simulator, factory-operations, integration | 게시됨 (Shared PR #6, merge commit `d0c997c`) |
 
 - **한 Issue로 올린 이유:** 입력 경로 없이 범위 축소와 Vision Result만으로는 Vision이 결과를 발행할 수 없다. 두 변경은 Shared 문서의 같은 문장(3.4·4.3·8절, INTERFACES Ground Truth, CONVENTIONS)을 고친다. 규칙은 PR 하나에 DOCUMENT_CHANGE 여러 건을 허용하지만 나누도록 요구하지는 않는다.
 - DOC-1의 `change.after`와 `compatibility`에 "현재 범위 제외, 모델 판정 복귀는 새 DOCUMENT_CHANGE로 제안"(D-11)을 적었고, `transition.rollback`에는 A§19 복구 방법(`8b1efb0`으로 되돌림)을 적었다.
@@ -575,8 +575,8 @@ Shared에는 관측성 요구가 없다. 아래는 모두 [가정]이며 디버�
 |---|---|---|---|
 | SHARED-1 | I-1, I-4 MESSAGE 게시와 게시 후 기록 | agent | 게시 완료, 기록 대기 |
 | SHARED-3 | 불량 정보 전달 경로 결정 (D-6 재결정) | human | 결정 완료 (2026-09-27, (b)) |
-| SHARED-2 | DOC-1(범위 축소·입력 경로·Vision Result) 게시와 게시 후 기록 | agent | PR 열림 (Shared PR #6), merge 대기 |
-| SHARED-5 | merge된 계약 commit을 `contract_ref`로 채택하고 이 문서의 매핑을 다시 확인 | agent | SHARED-2 대기 |
+| SHARED-2 | DOC-1(범위 축소·입력 경로·Vision Result) 게시와 게시 후 기록 | agent | 게시 완료 (Shared PR #6, `d0c997c`), 기록 대기 |
+| SHARED-5 | merge된 계약 commit을 `contract_ref`로 채택하고 이 문서의 매핑을 다시 확인 | agent | 채택 대상 `d0c997c` 이후. Shared 검토 요청 대기 |
 
 SHARED-4(DOC-2 별도 게시)는 DOC-1에 합쳐 PLAN에서 뺐다(승인 전 proposed task).
 
@@ -586,7 +586,7 @@ Issue가 Shared main에 merge되면 "미게시"를 실제 Issue ID(`ISSUE-<UUID>
 
 - I-1: ISSUE-a47146af-bbf3-4aa3-bfed-5cdcc64a16b5
 - I-4: ISSUE-63f6789a-a26b-42a4-8b3c-3dcfeaa07e1f
-- DOC-1: 미게시 (ISSUE-c8fad59b-796c-42aa-b969-be0be65eae43, Shared PR #6 merge 대기. 닫힌 PR #5의 ISSUE-e156d982는 미게시로 폐기)
+- DOC-1: ISSUE-c8fad59b-796c-42aa-b969-be0be65eae43 (Shared PR #6, merge commit d0c997c97129141d9853a42ce6e0d1f8f7309ae9, 2026-09-26T16:08:12Z. 닫힌 PR #5의 ISSUE-e156d982는 미게시로 폐기)
 
 ---
 
@@ -599,5 +599,6 @@ Issue가 Shared main에 merge되면 "미게시"를 실제 Issue ID(`ISSUE-<UUID>
 | `docs/CONVENTIONS.md` | 같음 | Timestamp, ID, Ground Truth, 이름·단위·오류 표현, 실행 환경과 설정 |
 | `docs/SHARED_WORKFLOW.md`, `AGENTS.md`, `templates/DOCUMENT_CHANGE.yaml`, `templates/MESSAGE.yaml` | 같음 | Shared 제기 절차 확인용 (11.6절) |
 | 위 문서 전체, `README.md`, `scripts/validate_shared.py`, `scripts/auto_approval.py`, `.github/*`, Issue `95d74411`, `9f81b8ac`, `fde005ee` | `8b1efb06325f711814152f4867d86e4413b4a404` | 2026-09-27 재확인. 11.7절과 문서 상단 갱신에 반영. 3~4절 매핑은 아직 갱신하지 않았다 |
+| `docs/ARCHITECTURE.md`, `docs/INTERFACES.md`, `docs/CONVENTIONS.md`, `issues/index.json` | `d0c997c97129141d9853a42ce6e0d1f8f7309ae9` | 2026-09-27 확인. Shared PR #6(ISSUE-c8fad59b) merge 반영. 게시 기록(11.7절)에만 반영했고 3~4절 매핑은 SHARED-5에서 맞춘다 |
 
 조회 방법: `gh api repos/<repository>/contents/docs/<문서> -f ref=<SHA>` (Contents API, `90-shared.md` 1·2절). 로컬 `shared-repository/` 폴더는 사용하지 않았다. 범위 축소 개정에서는 Shared를 다시 조회하지 않고 위 commit에서 읽은 내용을 그대로 썼다.
