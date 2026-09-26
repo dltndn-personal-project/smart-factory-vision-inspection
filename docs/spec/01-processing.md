@@ -13,7 +13,7 @@
 | `payload.py` | `ProductCreated(product_id, timestamp, image_path)`(frozen dataclass), `parse_product_created(raw: bytes) -> ProductCreated`, `build_vision_result(pc, gt) -> dict`, `encode(obj: dict) -> bytes` | 2절 검증, 4절 조립·직렬화 |
 | `ground_truth.py` | `GroundTruth(defect: bool, defect_type: str \| None)`, `Lookup(gt: GroundTruth, bad_lines: int)`, `lookup(path: Path, product_id: str) -> Lookup` | 3절 조회 |
 | `process.py` | `Publish`, `Drop`(frozen dataclass), `process(raw: bytes, ground_truth_path: Path) -> Publish \| Drop` | 2~4절을 순서대로 실행 |
-| (공통) | `Rejected(Exception)`: `reason: str`, `detail: str`, `bad_lines: int = 0` | 미발행 사유 전달. `payload.py`에 둔다 |
+| (공통) | `Rejected(Exception)`: `reason: str`, `detail: str`, `product_id: str \| None = None`, `timestamp: str \| None = None`, `bad_lines: int = 0` | 미발행 사유 전달. `payload.py`에 둔다 |
 
 ```python
 @dataclass(frozen=True)
@@ -34,7 +34,8 @@ class Drop:
     bad_lines: int
 ```
 
-- `process()`는 `Rejected`를 잡아 `Drop`으로 바꾼다. 그 밖의 예외는 잡지 않는다(호출자 `app.py`가 `internal_error`로 처리한다, `02-service.md` 3절).
+- `process()`는 `Rejected`를 잡아 같은 이름의 필드로 `Drop`을 만든다. `parse_product_created`는 그때까지 통과한 값만 `Rejected`에 싣는다: 5단계(`invalid_timestamp`) 실패는 `product_id`만, 6단계(`invalid_image_path`) 실패는 `product_id`와 `timestamp`, 그 앞 단계 실패는 둘 다 None. Ground Truth 단계(3절)의 `Rejected`에는 `process()`가 잡은 예외의 `product_id`·`timestamp` 속성에 검증된 값을 넣는다. `_reject_constant`도 `payload.py`에 두고 `ground_truth.py`가 import한다.
+- 그 밖의 예외는 잡지 않는다(호출자 `app.py`가 `internal_error`로 처리한다, `02-service.md` 3절).
 - 설정 `IMAGE_ROOT`에서 경로를 만드는 것은 호출자다: `ground_truth_path = Path(IMAGE_ROOT) / "ground_truth" / "products.jsonl"`.
 
 ## 2. Product Created 검증
@@ -43,7 +44,7 @@ class Drop:
 
 | 단계 | 검사 | 실패 `reason` |
 |---|---|---|
-| 1 | `raw.decode("utf-8")`(strict) 뒤 `json.loads`. 결과가 `dict`가 아니면 실패 | `invalid_json` |
+| 1 | `raw.decode("utf-8")`(strict) 뒤 `json.loads(text, parse_constant=_reject_constant)`. `_reject_constant`는 `NaN`·`Infinity`·`-Infinity`에서 `ValueError`를 낸다(Python 기본 파서는 표준 JSON이 아닌 이 값들을 받는다). 결과가 `dict`가 아니면 실패 | `invalid_json` |
 | 2 | `schema_version`이 있고 `type(v) is int and v == 1`(`True`는 int지만 거부한다) | `invalid_payload` |
 | 3 | `product_id`, `timestamp`, `image_path`가 모두 있고 `str`이다(이 순서로 보고 첫 실패를 `detail`에 적는다) | `invalid_payload` |
 | 4 | `re.fullmatch(r"P-[0-9]{8}", product_id)` | `invalid_product_id` |
@@ -60,7 +61,7 @@ class Drop:
 
 1. `path.read_bytes()`. `OSError`(없음, 권한, 디렉터리 등)면 `Rejected("ground_truth_unreadable", "<예외 클래스 이름>: <strerror>")`.
 2. `data.split(b"\n")`의 마지막 조각은 `\n`으로 끝나지 않은 줄(또는 빈 조각)이므로 버린다. 나머지가 완성된 줄이다.
-3. 완성된 줄마다 `line.decode("utf-8")` → `json.loads`. 둘 중 하나라도 실패하거나 결과가 `dict`가 아니면 그 줄을 건너뛰고 `bad_lines += 1`. 빈 줄도 여기에 든다.
+3. 완성된 줄마다 `line.decode("utf-8")` → `json.loads(…, parse_constant=_reject_constant)`(2절 1단계와 같은 함수). 둘 중 하나라도 실패하거나 결과가 `dict`가 아니면 그 줄을 건너뛰고 `bad_lines += 1`. 빈 줄도 여기에 든다.
 4. `obj.get("product_id") == product_id`인 줄을 모은다. 비교는 문자열 동등이다.
 5. 모은 줄이 0개면 `Rejected("ground_truth_missing")`, 2개 이상이면 `Rejected("ground_truth_duplicate", "<개수> lines")`.
 6. 한 줄이면 `defect`, `defect_type`만 읽고 검사한다. 아래 중 하나면 `Rejected("ground_truth_invalid")`:

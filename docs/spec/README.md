@@ -62,9 +62,10 @@ ARCHITECTURE.md는 이 spec의 배경과 근거다. 범위와 리뷰에서 정�
 | 4.8절 설정 키 6개 | `HEALTH_FILE` 추가, 빈 값은 설정 오류(D-19) |
 | 4.9절 "라이브러리의 자동 재연결", R-9 미확인 | `loop_forever(retry_first_connection=True)`, `reconnect_delay_set(1, 10)`, 이 맥에서 확인(D-08). NO_CONN 발행은 paho가 재연결 뒤 보냄(D-13) |
 | 9절 `reason`에 `disconnected` | `disconnected`는 event. `dropped`의 `reason`은 11개(D-14) |
-| 10절 event 7개 | `connect_failed`, `warning`, `stopped` 추가(D-14) |
+| 10절 event 7개 | `connect_failed`, `warning`, `stopped` 추가. `connected`와 기동 확인 파일은 구독 SUBACK 뒤(D-14, D-15) |
+| 4.8절 Topic 설정 | CONVENTIONS 이름 규칙만 받고 두 Topic이 같으면 오류(D-19) |
 | 6.3절 "명령은 spec·plan에서" | verify 명령 네 개와 시점을 고정(`04-verification.md` 4절). 기동 확인은 파일 healthcheck(D-15) |
-| 8절 "지연 목표를 따로 두지 않는다" | 자체 상한(평균 50 ms, 1초)을 테스트로 확인(D-21). Shared 기준은 아니다 |
+| 8절 "지연 목표를 따로 두지 않는다" | 자체 상한(`00-overview.md` C-07)을 테스트로 확인(D-21). Shared 기준은 아니다 |
 | 4.4절 "쓰기 권한으로 마운트되어도 쓰지 않는다" | 읽기 전용 마운트를 요구한다(조율 결정 C-16, V-04) |
 | 11절 미결 사항 | `AGREEMENTS.md` 끝 표 |
 

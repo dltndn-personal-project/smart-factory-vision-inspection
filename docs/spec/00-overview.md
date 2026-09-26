@@ -19,7 +19,7 @@ factory-simulator가 발행하는 Product Created를 받아, Image Storage의 `g
 | C-04 | 실제 Mosquitto에서 Product Created 하나에 Vision Result 하나가 QoS 1·retain false로 `factory/vision/result`에 온다. 잘못된 입력에는 오지 않는다 | Docker 연동 |
 | C-05 | Broker가 기동 때 없거나 도중에 재시작해도 15초 안에 다시 연결·재구독해 처리를 이어 간다. SIGTERM을 받으면 5초 안에 종료 코드 0으로 끝난다. 설정이 잘못되면 종료 코드 2로 끝난다 | Docker 연동 + 단위 |
 | C-06 | stdout의 모든 줄이 JSON 객체 하나이고 `event`·`reason` 값이 `02-service.md` 4절 표 안에 있다 | 단위 + Docker 연동 |
-| C-07 | 1,800줄 Ground Truth 파일에서 `process()` 한 번이 평균 50 ms 이하이고, 실제 Broker에서 각 Vision Result가 Product Created 발행 후 1초 안에 온다 | 단위 + Docker 연동 |
+| C-07 | 1,800줄 Ground Truth 파일에서 `process()` 한 번이 평균 50 ms 이하이고, 실제 Broker에서 30개 Vision Result의 지연(Product Created 발행 → 결과 도착)이 모두 2초 이하, 중앙값 0.5초 이하다 | 단위 + Docker 연동 |
 | C-08 | 저장소 루트에서 `docker compose up -d --build --wait`로 컨테이너가 `healthy`가 되고, `/data`가 읽기 전용(`RW=false`)으로 마운트된 채 Ground Truth를 읽어 결과를 발행한다 | smoke |
 | C-09 | `docs/COMPONENT.md`에 `<미정` 표시가 없고, `agent/config.yaml` `verify`에 `04-verification.md` 4절 네 항목이 있으며 모두 통과한다 | BOOT-1, VIS-4 |
 

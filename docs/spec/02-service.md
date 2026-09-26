@@ -9,11 +9,12 @@
 - 생성: `mqtt.Client(callback_api_version=CallbackAPIVersion.VERSION2, client_id=MQTT_CLIENT_ID, protocol=MQTTv311, clean_session=True)`. 인증·TLS·LWT 없음.
 - 기동 순서: 콜백 등록 → `reconnect_delay_set(min_delay=1, max_delay=10)` → `connect_async(host, port, keepalive=30)` → `loop_forever(retry_first_connection=True)`(주 스레드에서 막힌다).
 - 모든 콜백과 메시지 처리는 주 스레드(paho 루프) 하나에서 순서대로 실행된다. 별도 스레드·asyncio·작업 큐는 없다. 제품은 2초에 1개이고 처리는 수 ms라 충분하다(`DECISIONS.md` D-08).
-- 2026-09-27 이 맥에서 paho 2.1.0과 `eclipse-mosquitto:2.1.2-alpine`으로 확인한 동작: `on_message` 안의 `publish()`가 즉시 rc 0을 돌려주고 PUBACK 뒤 `on_publish`가 불린다. Broker 재시작 뒤 자동 재연결되어 `on_connect`의 재구독으로 수신이 이어진다. Broker 없이 시작해도 `retry_first_connection=True`로 재시도한다. 신호 처리기에서 `disconnect()`를 부르면 `loop_forever`가 돌아온다.
+- 2026-09-27 이 맥에서 paho 2.1.0과 `eclipse-mosquitto:2.1.2-alpine`으로 확인한 동작: `subscribe()`가 `(MQTT_ERR_SUCCESS, mid)`를 돌려주고 `on_subscribe`가 `[Granted QoS 1]`로 불린다. `on_message` 안의 `publish()`가 즉시 rc 0을 돌려주고 PUBACK 뒤 `on_publish`가 불린다. Broker 재시작 뒤 자동 재연결되어 `on_connect`의 재구독으로 수신이 이어진다. Broker 없이 시작해도 `retry_first_connection=True`로 재시도한다. 신호 처리기에서 `disconnect()`를 부르면 `loop_forever`가 돌아온다.
 
 | 콜백 | 하는 일 |
 |---|---|
-| `on_connect`(성공) | `subscribe(PRODUCT_CREATED_TOPIC, qos=1)` → 기동 확인 파일 생성(5절) → `connected` 로그 |
+| `on_connect`(성공) | `rc, mid = subscribe(PRODUCT_CREATED_TOPIC, qos=1)`. rc가 `MQTT_ERR_SUCCESS`면 `sub_mid = mid`로 기억하고 SUBACK을 기다린다. 아니면 `connect_failed` 로그(`detail`: rc 이름). 이때는 연결이 끊긴 것이므로 `on_disconnect`와 paho 재연결이 뒤따른다 |
+| `on_subscribe(client, userdata, mid, reason_code_list, properties)` | `mid == sub_mid`이고 `reason_code_list[0].is_failure`가 아니면(Granted QoS) 기동 확인 파일 생성(5절) → `connected` 로그. 실패 코드면 파일을 만들지 않고 `connect_failed` 로그(`detail: "subscribe refused"`). 다른 mid는 무시 |
 | `on_connect`(실패 reason code) | 기동 확인 파일 삭제 → `connect_failed` 로그. paho가 재시도한다 |
 | `on_connect_fail`(TCP 연결 실패) | 같음 |
 | `on_disconnect` | 기동 확인 파일 삭제 → `disconnected` 로그(종료 중이면 INFO) |
@@ -53,7 +54,7 @@ stdout에 한 줄에 JSON 객체 하나를 쓰고 매번 flush한다(`sys.stdout
 | `event` | `level` | 언제 | 추가 키 |
 |---|---|---|---|
 | `started` | INFO | 설정을 읽고 연결 전 | `mqtt_url`, `client_id`, `subscribe_topic`, `publish_topic`, `image_root`, `judgement_source`(`"PASS_THROUGH"`) |
-| `connected` | INFO | 연결·구독 요청 직후 | 없음 |
+| `connected` | INFO | 구독 SUBACK 수신(구독 완료) | 없음 |
 | `connect_failed` | WARNING | 연결 실패 | `reason: "connect_failed"`, `detail` |
 | `disconnected` | WARNING(종료 중 INFO) | 연결 끊김 | `reason: "disconnected"`, `detail` |
 | `received` | INFO | 메시지 수신 | `topic`, `bytes` |
@@ -80,8 +81,8 @@ stdout에 한 줄에 JSON 객체 하나를 쓰고 매번 flush한다(`sys.stdout
 HTTP endpoint가 없으므로 컨테이너 healthcheck는 파일로 한다(`DECISIONS.md` D-15).
 
 - 경로: 설정 `HEALTH_FILE`(기본 `/tmp/vision-inspection.connected`).
-- 시작할 때 있으면 지운다. `on_connect` 성공 때 만든다(`touch`). 연결 실패·끊김·종료 때 지운다(없으면 무시).
-- 뜻: "지금 Broker에 연결되어 Product Created를 구독 중". Ground Truth 파일 유무와는 무관하다.
+- 시작할 때 있으면 지운다. 구독 SUBACK을 받았을 때 만든다(`touch`, 1절). 연결 실패·끊김·종료 때 지운다(없으면 무시).
+- 뜻: "지금 Broker에 연결되어 Product Created 구독이 승인됨(SUBACK)". 이 파일이 생긴 뒤 발행된 Product Created는 받는다. Ground Truth 파일 유무와는 무관하다.
 - 컨테이너 `HEALTHCHECK`는 `03-runtime.md` 5절.
 
 ## 6. 기동과 종료

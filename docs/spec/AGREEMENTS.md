@@ -47,7 +47,7 @@ Shared에 새로 올릴 Interface는 없다. factory-simulator에 바라는 변�
 **약속**
 - Product Created 하나에 Vision Result를 최대 하나 발행한다(같은 Product Created를 두 번 받으면 두 번). `factory/vision/result`, QoS 1, retain false.
 - Payload는 Shared 확정본과 같은 10개 키를 항상 넣는다: `schema_version` 1, `product_id`·`timestamp`·`image_path`는 Product Created 값 그대로, `defect`·`defect_type`은 Ground Truth 값 그대로, `confidence`·`bbox`·`gradcam_path`는 항상 null, `judgement_source`는 항상 `"PASS_THROUGH"`. 키 순서는 Shared 예시와 같다(소비자는 순서에 의존하지 않아도 된다). 인코딩은 UTF-8 JSON 한 줄.
-- 발행 순서는 Product Created 수신 순서다. 처리 시간은 보통 수 ms이고, 1,800줄 파일에서도 Product Created 발행 뒤 1초 안에 도착하는 것을 자동 테스트로 확인한다(`04-verification.md` 3.2절).
+- 발행 순서는 Product Created 수신 순서다. 처리 시간은 보통 수 ms이고, 1,800줄 파일에서의 지연 상한을 자동 테스트로 확인한다(`00-overview.md` C-07).
 - 결과가 없을 수 있다: 입력이 잘못되었거나 Ground Truth 줄을 찾지 못하면 발행하지 않고 로그만 남긴다(오류 결과 메시지 없음). 소비자는 Product Created에 대응하는 결과가 오지 않는 경우를 처리해야 한다(예: "검사 결과 없음"으로 표시). 재전송 요청 수단은 없다.
 
 **근거**: Shared INTERFACES Vision Result(형식, 오류, 순서·중복), ARCHITECTURE 4.3절 현재 범위, 4.4절 Data Integration, 12절.
@@ -83,7 +83,7 @@ services:
 - 빌드: 저장소 루트 `Dockerfile`, 인자 없음. 이미지 진입점은 `python -m vision_inspection`이고 추가 명령 인자는 없다.
 - 환경 변수: 위 두 개면 된다. 나머지(`MQTT_CLIENT_ID`, 두 Topic, `LOG_LEVEL`, `HEALTH_FILE`)는 기본값을 쓴다(`03-runtime.md` 2절). Topic 접두사를 바꾸면 두 Topic 변수를 함께 준다.
 - 포트: 없다. HTTP를 열지 않는다.
-- 기동 확인: 컨테이너 `HEALTHCHECK`가 있다. 상태 `healthy`는 "Broker에 연결되어 Product Created를 구독 중"이다. `docker compose up --wait` 또는 다른 서비스의 `depends_on: {vision-inspection: {condition: service_healthy}}`로 기다릴 수 있다. Broker가 떠 있으면 컨테이너 시작 뒤 보통 3~6초 안에 `healthy`가 된다(검사 간격 3초).
+- 기동 확인: 컨테이너 `HEALTHCHECK`가 있다. 상태 `healthy`는 "Broker에 연결되어 Product Created 구독이 승인됨(SUBACK)"이다. 그 뒤 발행된 Product Created는 받는다. `docker compose up --wait` 또는 다른 서비스의 `depends_on: {vision-inspection: {condition: service_healthy}}`로 기다릴 수 있다. Broker가 떠 있으면 컨테이너 시작 뒤 보통 3~6초 안에 `healthy`가 된다(검사 간격 3초).
 - 기동 순서: 요구하지 않는다. Broker가 늦게 떠도 1~10초 간격으로 다시 연결한다. 다만 연결 전에 발행된 Product Created는 받지 못하므로, E2E 시나리오는 `healthy`를 확인한 뒤 제품 생산을 시작한다.
 - 종료: `docker stop`(SIGTERM)에 종료 코드 0으로 곧 끝난다. 설정 오류는 종료 코드 2. restart 정책은 두지 않는다.
 - 사용자: root. 초기화 때 따로 지울 상태가 없다.
@@ -97,7 +97,7 @@ services:
 **약속**: stdout에 한 줄 JSON 로그를 쓴다. `event`와 `reason` 값은 `02-service.md` 4절 표로 고정하며, 바꾸면 이 항목과 함께 바꾼다. integration은 E2E 검증에서 다음을 쓸 수 있다.
 
 - 결과 발행 확인: `event: "published"`(`product_id`, `defect`, `defect_type`, `latency_ms`).
-- 미발행 원인: `event: "dropped"`와 `reason`(`invalid_json`, `invalid_payload`, `invalid_product_id`, `invalid_timestamp`, `invalid_image_path`, `ground_truth_unreadable`, `ground_truth_missing`, `ground_truth_duplicate`, `ground_truth_invalid`, `publish_failed`, `internal_error`).
+- 미발행 원인: `event: "dropped"`와 `reason`(값 목록은 `02-service.md` 4절).
 - 연결 상태: `connected`, `disconnected`, `connect_failed`.
 - `detail`의 문구는 약속하지 않는다.
 
@@ -133,5 +133,5 @@ services:
 | U-11 | 결과의 로컬 파일 기록 | 하지 않는다. 로그만(D-14, `02-service.md` 4절) |
 | Q-7 | client id | V-07 |
 | Q-11, Q-17 | Inspection Image, ARCHITECTURE 6절 그림 문구 | 구현에 필요 없음(ARCHITECTURE 11.1절). 조치 없음 |
-| Q-14 | Vision 결과 지연 목표 | Shared 목표 없음. 자체 상한 1초(D-21, V-03) |
+| Q-14 | Vision 결과 지연 목표 | Shared 목표 없음. 자체 상한(`00-overview.md` C-07, D-21) |
 | Q-18, Q-24(상관분석 해석) | Operations의 기록·해석 | factory-operations 몫. V-03 "맞출 Component"에 적었다 |

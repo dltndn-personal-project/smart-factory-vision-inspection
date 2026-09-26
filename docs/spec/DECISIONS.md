@@ -71,7 +71,7 @@
 ### D-08 MQTT client 실행 방식
 - 선택지: (a) paho 2.1.0 `loop_forever(retry_first_connection=True)`를 주 스레드에서 돌리고 콜백 안에서 처리·발행 (b) `loop_start()` 네트워크 스레드 + 처리 스레드와 큐 (c) aiomqtt(asyncio)
 - 결정: (a). MQTT 3.1.1, `CallbackAPIVersion.VERSION2`, clean session, keepalive 30초, `reconnect_delay_set(1, 10)`.
-- 이유: 처리가 수 ms이고 제품은 2초에 1개라 스레드를 나눌 이유가 없다. 한 스레드라 `publish()`가 돌려준 `mid`를 기록하기 전에 `on_publish`가 불릴 경쟁이 없고, 받은 순서대로 발행된다. 재연결·첫 연결 재시도가 라이브러리에 있다. 2026-09-27 이 맥에서 Mosquitto 2.1.2로 발행·PUBACK, Broker 재시작 뒤 재연결·재구독, 신호 처리기의 `disconnect()`로 종료를 확인했다(ARCHITECTURE R-9 해소).
+- 이유: 처리가 수 ms이고 제품은 2초에 1개라 스레드를 나눌 이유가 없다. 한 스레드라 `publish()`가 돌려준 `mid`를 기록하기 전에 `on_publish`가 불릴 경쟁이 없고, 받은 순서대로 발행된다. 재연결·첫 연결 재시도가 라이브러리에 있다. 2026-09-27 이 맥에서 Mosquitto 2.1.2로 구독·SUBACK(`on_subscribe`), 발행·PUBACK, Broker 재시작 뒤 재연결·재구독, 신호 처리기의 `disconnect()`로 종료를 확인했다(ARCHITECTURE R-9 해소).
 - 영향: `02-service.md` 1~3·6절
 
 ### D-09 테스트용 MQTT Broker
@@ -93,8 +93,8 @@
 - 영향: `01-processing.md` 3절
 
 ### D-12 Product Created 검증 순서와 정규식
-- 결정: `01-processing.md` 2절 순서(JSON → `schema_version` → 필수 필드 타입 → `product_id` → timestamp → `image_path`)로 검사하고 첫 실패의 `reason`만 남긴다. 정규식은 `[0-9]`와 `re.fullmatch`를 쓴다. timestamp는 형식만 본다. `schema_version`의 `true`는 거부한다.
-- 이유: Python의 `\d`는 유니코드 숫자를, `$`는 끝 `\n`을 받아들여 CONVENTIONS의 의도보다 넓다. `bool`은 `int`의 하위 타입이라 `True == 1`이 참이다. 날짜 값 검증은 생산자가 시계로 만드는 값이라 실익이 없다.
+- 결정: `01-processing.md` 2절 순서(JSON → `schema_version` → 필수 필드 타입 → `product_id` → timestamp → `image_path`)로 검사하고 첫 실패의 `reason`만 남긴다. 정규식은 `[0-9]`와 `re.fullmatch`를 쓴다. timestamp는 형식만 본다. `schema_version`의 `true`는 거부한다. JSON의 `NaN`·`Infinity`는 거부한다(Product Created와 Ground Truth 줄 모두, spec 리뷰 5번).
+- 이유: Python의 `\d`는 유니코드 숫자를, `$`는 끝 `\n`을 받아들여 CONVENTIONS의 의도보다 넓다. `bool`은 `int`의 하위 타입이라 `True == 1`이 참이다. Python `json.loads`는 기본으로 표준 JSON이 아닌 `NaN`을 받는다(CONVENTIONS: UTF-8 JSON). 날짜 값 검증은 생산자가 시계로 만드는 값이라 실익이 없다.
 - 영향: `01-processing.md` 2절, `04-verification.md` 3.1절
 
 ### D-13 MQTT 경계 사례
@@ -110,7 +110,7 @@
 ### D-15 기동 확인 방법
 - 문맥: HTTP endpoint가 없다. integration은 compose에서 기동을 확인할 방법이 필요하다.
 - 선택지: (a) 연결 상태 파일 + `HEALTHCHECK test -f` (b) healthcheck 없이 로그의 `connected`로 확인 (c) 작은 HTTP `/healthz` 추가 (d) healthcheck가 MQTT로 직접 접속
-- 결정: (a). `on_connect` 성공 때 `HEALTH_FILE`을 만들고 끊기면 지운다. 컨테이너 상태 `healthy`는 "Broker에 연결되어 구독 중"을 뜻한다.
+- 결정: (a). 구독 SUBACK을 받았을 때 `HEALTH_FILE`을 만들고 끊기면 지운다. 컨테이너 상태 `healthy`는 "Broker에 연결되어 Product Created 구독이 승인됨"을 뜻한다. `subscribe()` 호출 성공만으로는 Broker가 구독을 등록했다는 뜻이 아니므로 SUBACK을 기다린다(spec 리뷰 2번).
 - 이유: 의존 추가가 없고 `docker compose up --wait`와 `depends_on: condition: service_healthy`를 그대로 쓸 수 있다. 2026-09-27 이 맥에서 시험 이미지로 확인했다. (b)는 compose가 기다릴 수 없다. (c)는 포트와 서버가 생긴다. (d)는 client id 충돌과 Broker 부하를 만든다.
 - 영향: `02-service.md` 5절, `03-runtime.md` 5절, `AGREEMENTS.md` V-05
 
@@ -130,7 +130,7 @@
 - 영향: `03-runtime.md` 1절
 
 ### D-19 설정
-- 결정: 환경 변수만 쓴다. 변수가 없으면 기본값, 빈 문자열이면 설정 오류. `MQTT_URL`은 `mqtt://host[:port]`만 받는다. `HEALTH_FILE`을 ARCHITECTURE 4.8절 키에 더했다.
+- 결정: 환경 변수만 쓴다. 변수가 없으면 기본값, 빈 문자열이면 설정 오류. `MQTT_URL`은 `mqtt://host[:port]`만 받는다. Topic은 CONVENTIONS 이름 규칙(`/`로 구분한 소문자)만 받고, 구독·발행 Topic이 같으면 오류다(자기 결과를 다시 처리하는 무한 반복 방지, spec 리뷰 1번). `HEALTH_FILE`을 ARCHITECTURE 4.8절 키에 더했다.
 - 이유: 설정 값이 7개뿐이라 파일이 필요 없다. 빈 값을 기본값으로 바꾸면 `.env`나 compose의 실수가 조용히 숨는다. factory-simulator와 같은 이름·형식(`MQTT_URL`, `IMAGE_ROOT`, `LOG_LEVEL`)이다.
 - 영향: `03-runtime.md` 2절
 
@@ -144,6 +144,6 @@
 
 ### D-21 처리 시간 자체 상한
 - 문맥: Shared ARCHITECTURE 2절의 Vision 성능 기준(mAP, FPS)은 현재 범위 제외다. Dashboard 5초 기준의 일부가 이 Component의 처리 시간이다.
-- 결정: `process()` 평균 50 ms 이하(1,800줄 파일), 실제 Broker에서 Product Created 발행 → Vision Result 도착 1초 이하를 자동 테스트로 확인한다. 로그 `published.latency_ms`에 매 결과의 시간을 남긴다.
+- 결정: `00-overview.md` C-07의 상한(단위 평균, 연동 최대·중앙값)을 자동 테스트로 확인하고 측정값을 출력한다. 로그 `published.latency_ms`에 매 결과의 시간을 남긴다. 연동 기준은 개별 한 건의 흔들림에 덜 민감하도록 최대 2초와 중앙값 0.5초 두 가지로 둔다(spec 리뷰 6번).
 - 이유: 파일 전체 읽기(D-10)가 1시간 분량에서도 충분히 빠르다는 근거를 테스트로 남긴다. 상한은 여유 있게 잡아 이 맥에서 흔들리지 않게 했다(2026-09-27 이 맥에서 Shared 예시 형태 1,800줄·약 0.8 MB를 나누고 파싱하는 데 평균 약 6 ms).
 - 영향: `00-overview.md` C-07, `04-verification.md` 3·5절

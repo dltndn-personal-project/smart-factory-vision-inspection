@@ -40,8 +40,8 @@ compose.yaml         # 단독 확인·smoke용. 시스템 compose는 integration
 |---|---|---|---|
 | `MQTT_URL` | `mqtt://mosquitto:1883` | `re.fullmatch(r"mqtt://([A-Za-z0-9.-]+)(?::([0-9]{1,5}))?", v)`, 포트 1~65535, 생략 시 1883 | `mqtt_url`, `mqtt_host`, `mqtt_port` |
 | `MQTT_CLIENT_ID` | `vision-inspection` | `re.fullmatch(r"[A-Za-z0-9_-]{1,64}", v)` | `client_id` |
-| `PRODUCT_CREATED_TOPIC` | `factory/product/created` | 1~256자, `+`·`#`·NUL 없음 | `product_created_topic` |
-| `VISION_RESULT_TOPIC` | `factory/vision/result` | 같음 | `vision_result_topic` |
+| `PRODUCT_CREATED_TOPIC` | `factory/product/created` | `re.fullmatch(r"[a-z0-9_]+(/[a-z0-9_]+)*", v)`, 256자 이하(CONVENTIONS: `/`로 구분한 소문자) | `product_created_topic` |
+| `VISION_RESULT_TOPIC` | `factory/vision/result` | 같음. `PRODUCT_CREATED_TOPIC`과 같으면 오류(자기 결과를 다시 받아 끝없이 재발행하기 때문이다. Vision Result도 Product Created 검증을 통과한다) | `vision_result_topic` |
 | `IMAGE_ROOT` | `/data` | 빈 문자열이 아님. 상대 경로면 현재 폴더 기준. 존재 여부는 보지 않는다 | `image_root: Path`, `ground_truth_path: Path`(`image_root / "ground_truth" / "products.jsonl"`) |
 | `LOG_LEVEL` | `INFO` | 대소문자 무시 `DEBUG`, `INFO`, `WARNING`, `ERROR` | `log_level`(대문자) |
 | `HEALTH_FILE` | `/tmp/vision-inspection.connected` | 빈 문자열이 아님 | `health_file: Path` |
