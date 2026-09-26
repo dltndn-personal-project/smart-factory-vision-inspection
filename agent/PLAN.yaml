@@ -76,7 +76,7 @@ tasks:
     title: Vision이 불량 정보를 받는 경로 결정
     why: Shared ISSUE-9f81b8ac가 Product Created에서 결함 정보를 빼고 ground_truth/products.jsonl을 평가·검증 전용으로 정해, 2026-09-24 결정 D-6(별도 Topic)을 다시 판단해야 했다. 2026-09-27 사용자가 (b) Ground Truth 파일 읽기로 결정했다
     depends_on: []
-    scope: []
+    scope: [docs/ARCHITECTURE.md]
     acceptance:
       - id: A1
         text: 사용자가 전달 경로(별도 MQTT Topic 또는 Ground Truth 파일 읽기 등)를 결정했다
