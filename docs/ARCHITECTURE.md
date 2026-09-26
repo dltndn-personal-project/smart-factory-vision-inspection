@@ -7,6 +7,7 @@
 > - 이 결정은 Shared 계약(A§2, §4.3, §8, §17, §19.1, I:Interface 후보, I:Image Reference)과 충돌하거나 계약 변경을 요구한다. 해당 항목은 11.1절 "Shared 제기 필요"에 모았다. 다른 저장소와 shared-repository는 수정하지 않았다.
 > - 참고한 Shared 기준: `dltndn-personal-project/smart-factory-shared-repository`의 `main` 브랜치 commit `6bcd2aad8e374a7e96f816051585a49cb5e30f86` (2026-09-24T02:11:37Z). 읽은 문서는 `docs/ARCHITECTURE.md`, `docs/INTERFACES.md`, `docs/CONVENTIONS.md`
 > - `SHARED_CONFIG.json`의 `contract_ref`가 `null`(계약 미채택)이라서 위 commit은 **참고용으로만** 읽었다(`agent/core/process/90-shared.md` 2절 방식). 이 문서의 계약 매핑은 구현 기준이 아니다.
+> - **2026-09-27 갱신**: Shared `main`이 `8b1efb06325f711814152f4867d86e4413b4a404`로 바뀌었다. I-1·I-4 게시, 승인 책임자 @dltndn 지정(ISSUE-95d74411), factory-simulator 계약 반영(ISSUE-9f81b8ac, ISSUE-fde005ee)이 merge되었다. 이 변경으로 Product Created에는 결함 정보가 없고(`schema_version` 1, 밀리초 timestamp), runtime Ground Truth는 `ground_truth/products.jsonl`에 두되 평가·검증 전용이며 MQTT로 전달하지 않는다. 그래서 4.2절의 별도 Topic 제안(D-6)은 **다시 결정해야 한다**(11.3절 D-6, PLAN SHARED-3). 범위 축소와 Vision Result는 DOCUMENT_CHANGE `ISSUE-e156d982-4404-4802-ab33-fde74fde09b9`(Shared PR #5, merge 대기)로 문서 수정과 함께 올렸다. 이 문서의 3~4절 계약 매핑은 아직 `6bcd2aad` 기준이며, 계약 채택(SHARED-5) 때 다시 맞춘다.
 
 ## 0. 문서 안내
 
@@ -132,7 +133,7 @@ Shared의 처리 순서(A§4.3 Processing Pipeline, A§7.2)에서 추론·설명
 | `validate` | 필수 필드, `product_id` 형식, timestamp 형식, 불량 정보 필드의 일관성을 검사한다 | C:ID, C:Timestamp. 불량 정보 필드는 [미정] Q-21 |
 | `image_ref` | `image_path`가 루트 기준 상대 경로이고 `products/` 아래인지 확인한다. 설정에 따라 파일 존재도 확인한다 | I:Image Reference. 존재 확인은 [가정] L-7 |
 | `judge` | **판정 경계.** 이번 구현은 `PassThroughJudge` 하나이며, 입력의 불량 정보를 판정 결과로 그대로 옮긴다 | 5절 |
-| `result` | Vision Result payload를 조립한다. 모델 산출 필드는 `null`로, `judgement_source`는 `"pass_through"`로 넣는다 | A§4.3 Output, [결정] D-7~D-9 |
+| `result` | Vision Result payload를 조립한다. 모델 산출 필드는 `null`로, `judgement_source`는 `"PASS_THROUGH"`로 넣는다 | A§4.3 Output, [결정] D-7~D-9 |
 | `egress` (MQTT publisher) | Vision Result를 발행한다 | A§4.3, A§7.2 |
 | `telemetry` | 로그, 처리 건수, 단계별 소요 시간을 기록한다 | 10절 |
 
@@ -237,6 +238,8 @@ Shared에는 **승인된 Interface가 아직 없다**(I 첫 문단). 아래 항�
 
 ### 4.2 입력: 불량 정보 메시지 (별도 Topic) [제안]
 
+> **재결정 필요 (2026-09-27):** Shared ISSUE-9f81b8ac가 merge되어 Ground Truth는 `ground_truth/products.jsonl`에만 두고 MQTT로 전달하지 않으며, AI 추론 입력으로 읽지 않는다고 정해졌다. 아래 별도 Topic 안(D-6)은 이 규칙을 되돌리고 factory-simulator 구현을 바꿔야 한다. 대안(Product Created를 받은 뒤 같은 `product_id`의 `ground_truth/products.jsonl` 줄을 읽기)은 factory-simulator 변경 없이 Ground Truth 사용 목적의 예외만 추가하면 된다. 어느 쪽으로 할지 사용자 결정이 필요하다(11.3절 D-6, PLAN SHARED-3). 결정 뒤 DOC-2로 올린다.
+
 Product Created와 분리한 새 메시지다(Q-20 (b), 사용자 동의 2026-09-24). Vision이 이 메시지 하나만으로 처리할 수 있도록 Product Created의 세 필드를 함께 싣는 **자기완결형**으로 제안한다. Topic 이름은 Shared에서 정한다. factory-operations는 이 Topic을 구독하지 않는다. [결정] D-6
 
 | 필드 | 예 | 용도 | 출처 | 상태 |
@@ -268,7 +271,7 @@ A§4.3 Output의 필드 집합을 유지하여 factory-operations가 기대하�
 | `bbox` | 항상 `null` (키는 유지) | 검출 박스 | A§4.3 | [결정] D-8, Q-22. Operations DB의 `bbox`(A§5.3)는 비게 된다 |
 | `image_path` | 입력값 그대로 | 제품 이미지 경로 | A§4.3, I:Image Reference | [근거] |
 | `gradcam_path` | 항상 `null` (키는 유지) | Grad-CAM 결과 경로 | A§4.3 | [범위 제외], [결정] D-7, Q-22. Dashboard의 Grad-CAM 항목은 유지하되 이번 범위에서는 비어 있다 [결정] D-10 |
-| `judgement_source` (선택 필드) | 고정값 `"pass_through"` | Shared에 없다 | 없음 | **신규** [결정] D-9, Q-24. 소비자는 무시해도 된다. 나중에 모델 판정으로 돌아가면 다른 값으로 구분한다 |
+| `judgement_source` (선택 필드) | 고정값 `"PASS_THROUGH"` (CONVENTIONS 열거값 대문자 규칙) | Shared에 없다 | 없음 | **신규** [결정] D-9, Q-24. 소비자는 무시해도 된다. 나중에 모델 판정으로 돌아가면 다른 값으로 구분한다 |
 
 - 모델 산출 필드는 키를 모두 두고 값은 `null`로 넣는다 [결정] D-7, D-8. 소비자의 파서가 필드 누락으로 깨지지 않게 하려는 것이다. Operations의 Dashboard는 null을 "없음"으로 표시해야 한다(Q-22에서 factory-operations에 알린다).
 - Operations의 Relational DB 최소 필드(A§5.3) 중 `id`와 `health_index_at_time`은 Operations가 채운다. [근거] A§4.4
@@ -474,13 +477,14 @@ Shared에는 관측성 요구가 없다. 아래는 모두 [가정]이며 디버�
 |---|---|---|---|---|
 | D-1 | 계약 변경 승인 책임자 | 사용자 본인. A§19와 Shared CODEOWNERS 반영은 Shared 쪽 변경이라 이 저장소에서 고치지 않고 I-1에 담는다 | Q-19 | 11.1, 11.7절 |
 | D-2 | 과제 평가 기준과의 관계 | 과제 출제자 승인을 이미 받았다. A§16 선례처럼 "출제자 승인"을 범위 축소의 근거로 기록한다 | Q-19, Q-23 | 문서 상단, 0.3절, 8절 |
-| D-3 | 제기 유형과 순서 | MESSAGE로 먼저 합의하고, 합의 뒤 DOCUMENT_CHANGE를 올린다 | Q-19~Q-25 | 11.7절 |
+| D-3 | 제기 유형과 순서 | MESSAGE로 먼저 합의하고, 합의 뒤 DOCUMENT_CHANGE를 올린다. **2026-09-27 사용자 지시로 변경:** I-1·I-4 게시 뒤에는 이슈와 공용 문서 수정을 같은 PR에 넣는 DOCUMENT_CHANGE로 바로 올린다 | Q-19~Q-25 | 11.7절 |
 | D-4 | 이슈 단위 | I-1(범위·성능), I-2(입력·Ground Truth), I-3(출력·다운스트림) 3건. I-1을 먼저 게시한다 | Q-19~Q-25 | 11.7절 |
 | D-5 | `source.task`와 근거 문서 | PLAN에 Shared 제기 task를 추가하고(`proposed: true`), 이 문서를 근거 문서로 삼는다 | - | `agent/PLAN.yaml` M1, 11.7절 |
 | D-6 | 불량 정보 Topic의 메시지 형태 | 자기완결형. Topic 이름은 Shared에 맡긴다. factory-operations는 구독하지 않는다 | Q-20, Q-21, Q-1 | 4.2절 |
+| D-6 재결정 | Vision이 불량 정보를 받는 경로 (2026-09-27 추가) | **미정.** Shared ISSUE-9f81b8ac로 전제가 바뀌었다. 선택지: (a) D-6대로 별도 MQTT Topic(factory-simulator 구현 변경, 8절 "MQTT로 전달하지 않음" 규칙 변경), (b) Product Created 수신 뒤 `ground_truth/products.jsonl`에서 같은 `product_id` 줄을 읽기(factory-simulator 변경 없음, Ground Truth 사용 목적 예외만 추가, `products.jsonl`은 Product Created 발행 전에 기록됨). 추천은 (b) | Q-20, Q-21 | 4.2절, PLAN SHARED-3 |
 | D-7 | 모델 산출 필드 | `confidence`, `gradcam_path`는 키를 유지하고 값은 `null` | Q-22 | 4.3절 |
 | D-8 | `bbox` 제공 | `null`. Simulator에 결함 위치를 요구하지 않는다 | Q-21, Q-22, Q-5 | 4.2, 4.3절 |
-| D-9 | 판정 출처 표시 | 선택 필드 `judgement_source: "pass_through"` | Q-24 | 4.3절 |
+| D-9 | 판정 출처 표시 | 선택 필드 `judgement_source`. 값은 CONVENTIONS 열거값 대문자 규칙(ISSUE-9f81b8ac)에 따라 `"PASS_THROUGH"` | Q-24 | 4.3절 |
 | D-10 | `gradcam/`과 Dashboard의 Grad-CAM 항목 | 둘 다 유지하고 "이번 범위에서는 비어 있음"으로 표시 | Q-22, Q-25 | 1.4, 4.3, 4.4절 |
 | D-11 | 범위 축소의 표현 | "현재 범위 제외, 복귀는 새 DOCUMENT_CHANGE로 제안". DOCUMENT_CHANGE에서는 `change.after`와 `compatibility`에 적는다. `transition.rollback`에는 A§19 복구 방법(마지막으로 검증된 Component 조합과 계약 commit으로 되돌림)을 적는다 (2026-09-25 수정) | Q-19, Q-23, Q-25 | 11.7절 |
 | D-12 | 기존 명확화 질문 | MESSAGE 1건(I-4)으로 묶는다 | Q-6, 7, 9, 11, 12, 14, 15, 17 | 11.7절 |
@@ -525,58 +529,49 @@ Shared에는 관측성 요구가 없다. 아래는 모두 [가정]이며 디버�
 - `docs/COMPONENT.md`의 `<미정>` 슬롯, 검증 명령, 첫 도메인 milestone은 PLAN의 BOOT-1 task에서 다룬다. 이 문서는 BOOT-1 밖에서 사용자 요청으로 작성한 초안이다.
 - Shared Issue 목록은 조회하지 않았다(AGENTS.md: 사용자가 명시적으로 요청할 때만 검토. 2026-09-24 사용자가 이번에는 `issues/index.json` 조회를 허가하지 않았다). 11.1의 질문이 이미 Issue로 제기되었는지, Shared가 **초기화 기간**(색인이 비어 있어 DOCUMENT_CHANGE 없이 문서를 바꿀 수 있는 기간)인지는 **미확인**이다.
 
-### 11.7 Shared 제기 계획 [결정] D-3, D-4, D-5, D-11, D-12
+### 11.7 Shared 제기 계획 [결정] D-3(2026-09-27 변경), D-4, D-5, D-11, D-12
 
-**절차 요약** (Shared `docs/SHARED_WORKFLOW.md`, `AGENTS.md`, `templates/`, ref `6bcd2aad…` 기준. 게시 직전에 Shared 최신 commit으로 다시 확인한다, `90-shared.md` 5절)
+**절차 요약** (Shared `docs/SHARED_WORKFLOW.md`, `AGENTS.md`, `templates/`, `README.md`, `scripts/`. 2026-09-27에 `8b1efb0`로 다시 읽었고, 규칙 파일은 `6bcd2aad` 이후 CODEOWNERS 말고 바뀌지 않았다)
 
-- MESSAGE에는 `observation`(사실과 불확실한 부분 구분), `requested_action`, `evidence`, `follow_up.owner`와 `done_when`을 쓴다. MESSAGE만 추가한 PR은 CI가 승인·merge한다. 단, Shared CODEOWNERS에 placeholder가 남아 있거나 저장소의 auto-merge가 꺼져 있으면 CI가 자동 승인·merge하지 않으므로 사람이 merge한다(2026-09-25 확인).
-- DOCUMENT_CHANGE에는 `reason`, `changed_documents`, `change.before/after`, `compatibility`, `transition.adoption/rollback`을 쓰고, 실제 Shared 문서 수정을 같은 PR에 넣는다. CODEOWNERS 승인 뒤 merge된다.
-- 공통 필드는 `source.component: vision-inspection`, `source.task`(PLAN의 SHARED-n), `summary`, `created_at`(UTC), `attention`, `related_issues`(이미 게시된 앞선 Issue만)다.
-- 게시된 Issue는 고치지 않는다. 새 사실과 답변은 새 Issue로 올린다. PR 생성은 게시 완료가 아니며 merge 여부를 확인한다.
+- 초기화 기간은 끝났다(첫 운영 Issue I-1·I-4 merge). 이제 `docs/` 변경은 같은 PR의 DOCUMENT_CHANGE로만 할 수 있다(`scripts/validate_shared.py`).
+- DOCUMENT_CHANGE에는 `reason`, `changed_documents`, `change.before/after`, `compatibility`, `transition.adoption/rollback`을 쓰고, 실제 Shared 문서 수정과 `issues/index.json` 항목을 같은 PR에 넣는다. CODEOWNERS(@dltndn) 승인 뒤 merge된다.
+- MESSAGE만 추가한 PR은 CODEOWNERS에 실제 소유자가 생겨 `auto_approval.py` 기준 자동 승인 대상이다. 다만 Shared 저장소의 "Allow auto-merge"가 꺼져 있어 CI의 자동 merge 단계는 실패한다. 사람이 merge한다(2026-09-27 확인).
+- 공통 필드: `source.component: vision-inspection`, `source.task`(PLAN의 SHARED-n), `summary`, `created_at`(UTC), `attention`, `related_issues`(색인에서 앞선 Issue만).
+- 게시된 Issue는 고치지 않는다. 새 사실은 새 Issue로 올린다. PR 생성은 게시 완료가 아니며 merge 여부를 확인한다.
+- 다른 Component 소유 절: Shared 규칙에 금지 조항이 없고, factory-simulator의 ISSUE-9f81b8ac도 공통 절(17절 등)을 고친 선례가 있다. 다만 소유 Component의 판단이 필요한 절(A§5.3 등)은 고치지 않고 compatibility에 확인 요청으로 남긴다.
 
-**1단계: MESSAGE로 합의 (게시 순서대로)**
+**게시 순서와 구성**
 
-| 순서 | 이슈 | 유형 | 담을 내용 | 관련 Q | attention | related_issues |
+| 순서 | 이슈 | 유형 | 담은 내용 | 관련 Q | attention | 상태 |
 |---|---|---|---|---|---|---|
-| 1 | I-1 범위 축소와 성능 기준 | MESSAGE | Vision AI 판정(검출, Grad-CAM, 학습·평가) 제외와 pass-through 전환, 과제 출제자 승인 근거(A§16 형식), mAP·20 FPS와 integration의 Vision 측정 제외, Simulator의 Vision 학습 데이터셋 생성 필요 여부 질문, "현재 범위 제외, 복귀는 새 DOCUMENT_CHANGE" 표현, A§19 승인 책임자(사용자 본인)와 CODEOWNERS 반영 요청 | Q-19, Q-23, Q-25의 `training/`·`evaluation/` 부분 | factory-simulator, factory-operations, integration | 없음 |
-| 2 | I-4 명확화 질문 모음 | MESSAGE | timestamp 유지 확정, QoS·retain, `product_id` 유일성과 production sequence, Inspection Image, 공통 실행 방식, 제품 생성 속도와 결과 지연 목표, 오류 표현, A§6 다이어그램 문구 | Q-6, Q-7, Q-9, Q-11, Q-12, Q-14, Q-15, Q-17 | factory-simulator, factory-operations, integration | 없음 [가정] |
-| 3 | I-2 입력과 Ground Truth | MESSAGE | 불량 정보 별도 Topic(자기완결형, 이름은 Shared가 정함, bbox 없음, Operations 미구독), Product Created는 Ground Truth 없이 유지하고 소비자에서 Vision 제외, A§3.4·A§8 Ground Truth 사용 목적 추가, integration 검사 규칙 영향, `defect_type` 표기, 결함 여러 개·없음 표현 | Q-20, Q-21, Q-1, Q-2, Q-3 | factory-simulator, factory-operations, integration | I-1 |
-| 4 | I-3 출력과 다운스트림 | MESSAGE | Vision Result 필드 유지, `confidence`·`bbox`·`gradcam_path`는 `null`, `judgement_source: "pass_through"` 선택 필드, Dashboard의 Grad-CAM 항목과 `gradcam/`은 "이번 범위에서는 비어 있음", 상관분석 해석, A§5.3 필드 정합 | Q-22, Q-24, Q-18, Q-25의 `gradcam/` 부분 | factory-operations, integration | I-1 |
+| 1 | I-1 범위 축소와 성능 기준 | MESSAGE | 범위 축소 제안, 출제자 승인 근거, 승인 책임자 지정 요청 | Q-19, Q-23 | factory-simulator, factory-operations, integration | 게시됨 (Shared PR #1) |
+| 2 | I-4 명확화 질문 모음 | MESSAGE | Q-6, 7, 9, 11, 12, 14, 15, 17 | 같음 | factory-simulator, factory-operations, integration | 게시됨 (Shared PR #1). Q-6, 7, 9, 12, 14 일부는 ISSUE-9f81b8ac·fde005ee가 답했다 |
+| 3 | DOC-1 범위 축소와 Vision Result 확정 (원래 I-1 후속 + I-3) | DOCUMENT_CHANGE + 문서 수정 | ARCHITECTURE 2·3.4·4.3(현재 범위 신설)·4.4·7.2·8·17·18·19.1, INTERFACES Vision Result 확정·Image Reference·Ground Truth 검사 예외, CONVENTIONS Ground Truth | Q-19, Q-22~Q-25, Q-6, Q-15 | factory-operations, integration, factory-simulator | PR 열림 (Shared PR #5, merge 대기) |
+| 4 | DOC-2 불량 정보 전달 경로 (원래 I-2) | DOCUMENT_CHANGE + 문서 수정 | D-6 재결정 결과에 따라 INTERFACES(새 Topic 또는 Ground Truth 읽기 예외), ARCHITECTURE 8절, CONVENTIONS | Q-20, Q-21, Q-1 | factory-simulator, factory-operations, integration | 사용자 결정 대기 (PLAN SHARED-3) |
 
-- I-1~I-3의 `requested_action`은 승인 책임자(사용자 본인)의 합의 결정이고, `follow_up.owner`는 계약 변경 승인 책임자다. `done_when`은 "합의 결과를 DOCUMENT_CHANGE로 게시"로 둔다. [가정]
-- `evidence`에는 이 문서의 commit SHA 고정 링크(permalink)와 해당 절 번호를 넣는다(D-5). 이 문서의 PR이 merge되기 전에 게시하면 PR 링크도 함께 넣는다(2026-09-25 사용자 지시).
-- 게시 순서는 I-1과 I-4를 먼저(같은 PR, I-1 → I-4 순서로 색인에 추가), 그 뒤 I-2와 I-3이다(2026-09-25 사용자 지시). I-4는 앞선 Issue와 관계가 없어 I-1과 함께 게시할 수 있다.
-- I-2와 I-3은 I-1이 merge된 뒤 게시한다. `related_issues`가 게시된 Issue만 가리킬 수 있기 때문이다.
-- **게시 후 기록:** 게시한 Issue가 Shared main에 merge되면 `90-shared.md` 2·4절에 따라 자기가 게시한 Issue도 색인 순서대로 검토해 `SHARED_ISSUE_STATUS.yaml`에 기록한다(`source_revision`, `component_revision`, `contract_ref`, `reason`, `evidence`, `status`). 이어서 `python3 agent/core/tools/validate.py --remote`로 확인하고, 아래 게시 기록란에 Issue ID를 적는다. 앞선 미검토 Issue가 있으면 그것부터 처리한다.
-
-**2단계: DOCUMENT_CHANGE로 반영**
-
-- 합의가 끝나면 합의 내용을 반영한 Shared 문서 수정을 DOCUMENT_CHANGE로 올린다. 대상 문서는 ARCHITECTURE(A§2, §3.4, §4.3, §7.2, §8, §17, §18, §19, §19.1), INTERFACES(Interface 후보, Image Reference), CONVENTIONS(Ground Truth)다.
-- `change.after`와 `compatibility`: Vision AI 판정은 "현재 범위 제외"이며, 모델 판정 복귀는 새 DOCUMENT_CHANGE로 제안한다(D-11).
-- `transition.adoption`: 각 Component가 변경된 계약 commit을 `contract_ref`로 채택하고 integration이 고정 조합으로 확인한다.
-- `transition.rollback`: 검증에 실패하면 마지막으로 검증된 Component commit 조합과 계약 commit으로 되돌린다(A§19 복구 방법).
-- DOCUMENT_CHANGE를 I-1~I-3에 대응해 나눌지 한 건으로 묶을지는 합의 결과를 보고 정한다. [미정]
-- Shared가 초기화 기간이면 DOCUMENT_CHANGE 없이 문서를 바꿀 수 있지만, 이 계획은 초기화 기간 여부와 관계없이 MESSAGE→DOCUMENT_CHANGE 순서를 따른다. I-1이 첫 운영 Issue라면 게시와 함께 초기화 기간이 끝난다.
+- DOC-1의 `change.after`와 `compatibility`에 "현재 범위 제외, 모델 판정 복귀는 새 DOCUMENT_CHANGE로 제안"(D-11)을 적었고, `transition.rollback`에는 A§19 복구 방법을 적었다.
+- DOC-1은 불량 정보 전달 경로를 정하지 않는다. 전달 경로(DOC-2)가 merge되기 전에는 Vision Result를 발행할 수 없다.
+- `evidence`와 `related_issues`: 이 저장소 `main` commit에 고정한 permalink와 앞선 Issue를 넣는다.
+- **게시 후 기록:** 게시한 Issue가 Shared `main`에 merge되면 아래 게시 기록란에 ID를 적는다. 이어서 `90-shared.md` 2·4절에 따라 색인 순서대로 검토해 `SHARED_ISSUE_STATUS.yaml`에 기록하고 `validate.py --remote`로 확인한다. Shared Issue 검토는 사용자가 요청할 때만 한다(AGENTS.md). 앞선 미검토 Issue(ISSUE-95d74411, 9f81b8ac, fde005ee)도 순서대로 함께 처리한다.
 
 **PLAN 연결** (`agent/PLAN.yaml` milestone M1, 모두 `proposed: true`이므로 사람 승인 뒤 시작할 수 있다)
 
-| task | 내용 | 담당 |
-|---|---|---|
-| SHARED-1 | I-1, I-4 MESSAGE 게시와 게시 후 기록 | agent |
-| SHARED-2 | I-2, I-3 MESSAGE 게시와 게시 후 기록 | agent |
-| SHARED-3 | 승인 책임자가 I-1~I-3 합의 결정 | human |
-| SHARED-4 | 합의 내용을 DOCUMENT_CHANGE와 Shared 문서 수정으로 게시하고 게시 후 기록 | agent |
-| SHARED-5 | merge된 계약 commit을 `contract_ref`로 채택하고 이 문서의 매핑을 다시 확인 | agent |
+| task | 내용 | 담당 | 상태 |
+|---|---|---|---|
+| SHARED-1 | I-1, I-4 MESSAGE 게시와 게시 후 기록 | agent | 게시 완료, 기록 대기 |
+| SHARED-2 | DOC-1 게시와 게시 후 기록 | agent | PR 열림, merge 대기 |
+| SHARED-3 | 불량 정보 전달 경로 결정 (D-6 재결정) | human | 결정 대기 |
+| SHARED-4 | DOC-2 게시와 게시 후 기록 | agent | SHARED-2, SHARED-3 대기 |
+| SHARED-5 | merge된 계약 commit을 `contract_ref`로 채택하고 이 문서의 매핑을 다시 확인 | agent | SHARED-4 대기 |
 
 **게시 기록**
 
-Issue가 Shared main에 merge되면 아래 줄의 "미게시"를 실제 Issue ID(`ISSUE-<UUID>`)로 바꾼다. PLAN의 SHARED-n 검증이 이 형식(`- <이슈>: ISSUE-<UUID>`)을 읽는다.
+Issue가 Shared main에 merge되면 "미게시"를 실제 Issue ID(`ISSUE-<UUID>`)로 바꾼다. PLAN의 SHARED-n 검증이 이 형식(`- <이슈>: ISSUE-<UUID>`)을 읽는다.
 
-- I-1: 미게시
-- I-2: 미게시
-- I-3: 미게시
-- I-4: 미게시
-- DOC-1: 미게시
+- I-1: ISSUE-a47146af-bbf3-4aa3-bfed-5cdcc64a16b5
+- I-4: ISSUE-63f6789a-a26b-42a4-8b3c-3dcfeaa07e1f
+- DOC-1: 미게시 (ISSUE-e156d982-4404-4802-ab33-fde74fde09b9, Shared PR #5 merge 대기)
+- DOC-2: 미게시
 
 ---
 
@@ -588,5 +583,6 @@ Issue가 Shared main에 merge되면 아래 줄의 "미게시"를 실제 Issue ID
 | `docs/INTERFACES.md` | 같음 | Interface 후보, Image Reference, 작성 항목 |
 | `docs/CONVENTIONS.md` | 같음 | Timestamp, ID, Ground Truth, 이름·단위·오류 표현, 실행 환경과 설정 |
 | `docs/SHARED_WORKFLOW.md`, `AGENTS.md`, `templates/DOCUMENT_CHANGE.yaml`, `templates/MESSAGE.yaml` | 같음 | Shared 제기 절차 확인용 (11.6절) |
+| 위 문서 전체, `README.md`, `scripts/validate_shared.py`, `scripts/auto_approval.py`, `.github/*`, Issue `95d74411`, `9f81b8ac`, `fde005ee` | `8b1efb06325f711814152f4867d86e4413b4a404` | 2026-09-27 재확인. 11.7절과 문서 상단 갱신에 반영. 3~4절 매핑은 아직 갱신하지 않았다 |
 
 조회 방법: `gh api repos/<repository>/contents/docs/<문서> -f ref=<SHA>` (Contents API, `90-shared.md` 1·2절). 로컬 `shared-repository/` 폴더는 사용하지 않았다. 범위 축소 개정에서는 Shared를 다시 조회하지 않고 위 commit에서 읽은 내용을 그대로 썼다.
