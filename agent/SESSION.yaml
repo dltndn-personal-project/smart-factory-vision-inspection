@@ -29,8 +29,7 @@ steps:
 - do: 'paho import 검사, Makefile docker-test, agent/config.yaml verify {name: broker,
     run: "make docker-test"}, validate.py --remote'
   check: A7, A8, A9
-  done: false
+  done: true
 attempts: {}
 evidence: {}
-next_action: 'step 6: Makefile docker-test, agent/config.yaml verify broker commit
-  후 validate.py --remote'
+next_action: agent.py verify
