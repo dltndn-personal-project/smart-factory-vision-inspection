@@ -588,14 +588,14 @@ R-11(JSON Schema 라이브러리)은 L-9 해소로 삭제했다(2026-09-27 리�
 - factory-operations에는 확인 요청으로만 남겼다: A§5.3 Vision 최소 필드, Ground Truth에서 옮긴 결함 값을 상관분석에 쓰는 것과 A§17 "Evaluation Only"의 관계.
 - **게시 후 기록:** 게시한 Issue가 Shared `main`에 merge되면 아래 게시 기록란에 ID를 적는다. 이어서 `90-shared.md` 2·4절에 따라 색인 순서대로 검토해 `SHARED_ISSUE_STATUS.yaml`에 기록하고 `validate.py --remote`로 확인한다. Shared Issue 검토는 사용자가 요청할 때만 한다(AGENTS.md). 앞선 미검토 Issue(ISSUE-95d74411, 9f81b8ac, fde005ee)도 순서대로 함께 처리한다.
 
-**PLAN 연결** (`agent/PLAN.yaml` milestone M1, 모두 `proposed: true`이므로 사람 승인 뒤 시작할 수 있다)
+**PLAN 연결** (`agent/PLAN.yaml` milestone M1. 2026-09-27 계획 PR에서 책임자 채팅 승인으로 `proposed` 없이 등록했다. 실행 순서는 `docs/plan/`)
 
 | task | 내용 | 담당 | 상태 |
 |---|---|---|---|
 | SHARED-1 | I-1, I-4 MESSAGE 게시와 게시 후 기록 | agent | 게시 완료. 2026-09-27 Shared 검토로 색인 6건을 `SHARED_ISSUE_STATUS.yaml`에 기록(`d0c997c` 기준) |
-| SHARED-3 | 불량 정보 전달 경로 결정 (D-6 재결정) | human | 결정 완료 (2026-09-27, (b), Shared PR #6). 사람의 수동 확인(A1) 기록 대기 |
-| SHARED-2 | DOC-1(범위 축소·입력 경로·Vision Result) 게시와 게시 후 기록 | agent | 게시 완료 (Shared PR #6, `d0c997c`). DOC-1 기록은 SHARED-1 검토에서 색인 순서대로 함께 남겼다. task는 SHARED-3 완료 뒤 시작할 수 있다 |
-| SHARED-5 | merge된 계약 commit을 `contract_ref`로 채택하고 이 문서의 매핑을 다시 확인 | agent | 채택 대상 `d0c997c` 이후. Shared 검토 요청 대기 |
+| SHARED-3 | 불량 정보 전달 경로 결정 (D-6 재결정) | human | 완료 (2026-09-27 책임자 결정 (b), Shared PR #6). A1을 자동 검사로 바꿔 계획 PR에서 기록 |
+| SHARED-2 | DOC-1(범위 축소·입력 경로·Vision Result) 게시와 게시 후 기록 | agent | 완료 (Shared PR #6, `d0c997c`). DOC-1 기록은 SHARED-1 검토에서 색인 순서대로 함께 남겼다. A2를 자동 검사로 바꿔 계획 PR에서 도구 절차로 기록 |
+| SHARED-5 | merge된 계약 commit을 `contract_ref`로 채택하고 이 문서의 매핑을 다시 확인 | agent | 다음 task. `d0c997c`를 채택한다(`docs/plan/00-overview.md` 4절) |
 
 SHARED-4(DOC-2 별도 게시)는 DOC-1에 합쳐 PLAN에서 뺐다(승인 전 proposed task).
 
