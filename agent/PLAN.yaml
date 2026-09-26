@@ -1,5 +1,8 @@
 # 작업 계획. 사람이 PR로 리뷰한다. Agent가 추가하는 milestone과 task에는 proposed: true를 붙이고,
 # 사람이 승인할 때 지운다. 작성법은 agent/core/examples/PLAN.yaml과 agent/core/process/20-plan.md.
+# 2026-09-27 책임자가 채팅으로 이 계획(docs/plan/)을 승인했다(docs/spec/DECISIONS.md D-02, 조율 결정 C-01). 그래서 M1~M4와 task에 proposed가 없다.
+# acceptance는 자동 검사만 쓴다(D-03). BOOT-1 A3(manual)은 완료된 기록으로 남긴다. SHARED-2 A2·SHARED-3 A1·SHARED-5 A3은 manual에서 command로 바꿨다.
+# task 블록의 원본 설명과 단계 개요는 docs/plan/ 계획 파일에 있고, 두 곳은 같아야 한다(docs/plan/README.md 1절).
 milestones:
   - id: M0
     outcome: 도메인 슬롯을 채워 계획 기반 작업을 시작할 수 있다
@@ -8,11 +11,29 @@ milestones:
       - agent/config.yaml에 실제로 실행해 본 검증 명령이 있다
       - 사람이 첫 도메인 milestone을 승인했다
   - id: M1
-    outcome: Vision AI 판정 제외(pass-through)에 필요한 Shared 계약 변경이 합의·게시되고, 이 Component가 그 계약을 contract_ref로 채택한다
+    outcome: Vision pass-through에 필요한 Shared 계약 변경(Shared PR #6, merge commit d0c997c)이 게시·merge되었고, 이 Component가 그 commit을 contract_ref로 채택한다
     exit_criteria:
-      - I-1·I-4 MESSAGE와 DOC-1(범위 축소·Ground Truth 입력 경로·Vision Result) DOCUMENT_CHANGE가 Shared main에 merge되었다
-      - SHARED_CONFIG.json의 contract_ref가 변경된 계약 commit이다
-      - docs/ARCHITECTURE.md의 계약 매핑이 채택한 계약 기준으로 갱신되었다
+      - I-1·I-4 MESSAGE와 DOC-1 DOCUMENT_CHANGE(ISSUE-c8fad59b)가 Shared main에 merge되어 있고 SHARED_ISSUE_STATUS.yaml에 기록되어 있다 (SHARED-1, SHARED-2)
+      - SHARED_CONFIG.json의 contract_ref가 d0c997c97129141d9853a42ce6e0d1f8f7309ae9이고 validate.py --remote가 통과한다 (C-01, SHARED-5)
+      - docs/ARCHITECTURE.md 상단에 채택 기록이 있고 4절 첫 문단이 채택한 contract_ref 기준이다 (SHARED-5)
+  - id: M2
+    outcome: 설정·로그, Product Created 검증, Ground Truth 조회, Vision Result 조립이 paho 없이 동작하고 단위 테스트로 확인된다
+    exit_criteria:
+      - make test가 통과하고 C-02(Shared 예시와 같은 dict·키 순서), C-03(미발행 reason 9개), C-07 단위(1,800줄 평균 50 ms 이하) 테스트가 그 안에 있다
+      - payload·ground_truth·process 모듈이 paho를 import하지 않는다
+      - agent/config.yaml verify에 unit이 있다
+  - id: M3
+    outcome: python -m vision_inspection이 실제 Mosquitto에서 Product Created를 받아 Vision Result를 발행하고, 재연결·종료·설정 오류를 spec대로 처리한다
+    exit_criteria:
+      - make docker-test가 통과하고 C-04(발행·미발행), C-05(재연결 15초, SIGTERM 종료 코드 0, 설정 오류 2), C-06(로그 형식), C-07 연동(30개 지연 최대 2초·중앙값 0.5초 이하) 테스트가 그 안에 있다
+      - paho를 import하는 모듈은 app.py 하나다
+      - agent/config.yaml verify에 broker가 있다
+  - id: M4
+    outcome: 저장소 루트의 Dockerfile과 compose.yaml로 컨테이너가 healthy가 되고, 읽기 전용 /data의 Ground Truth로 결과를 발행하는 것을 smoke가 자동으로 확인한다
+    exit_criteria:
+      - make smoke가 통과한다 (C-08)
+      - agent/config.yaml verify에 spec 04 4절 네 항목(agent-files, unit, broker, smoke)이 있고 모두 통과한다 (C-09)
+      - docs/COMPONENT.md 실행 절이 실제 실행 방법과 같다
 tasks:
   - id: BOOT-1
     milestone: M0
@@ -51,6 +72,7 @@ tasks:
         text: 게시한 I-1, I-4가 90-shared.md 2·4절에 따라 SHARED_ISSUE_STATUS.yaml에 기록되어 있고 원격 검사를 통과한다
         check: {type: command, run: "python3 -c \"import re, sys, yaml; doc = open('docs/ARCHITECTURE.md', encoding='utf-8').read(); status = (yaml.safe_load(open('SHARED_ISSUE_STATUS.yaml')) or {}).get('issues') or {}; ids = [re.search(r'^- ' + k + r': (ISSUE-[0-9A-Fa-f-]{36})', doc, re.M) for k in ['I-1', 'I-4']]; sys.exit(not all(m and m.group(1) in status for m in ids))\" && python3 agent/core/tools/validate.py --remote"}
     size: S
+  # M1 나머지: docs/plan/00-overview.md 4절
   - id: SHARED-2
     milestone: M1
     type: chore
@@ -63,8 +85,8 @@ tasks:
         text: DOC-1 DOCUMENT_CHANGE가 Shared main의 issues/index.json에 등록되어 있고 ID가 ARCHITECTURE.md 게시 기록에 적혀 있다
         check: {type: command, run: "index=$(gh api \"repos/$(jq -r .repository SHARED_CONFIG.json)/contents/issues/index.json\" -H 'Accept: application/vnd.github.raw+json') && for key in DOC-1; do id=$(grep -Eo \"^- $key: ISSUE-[0-9A-Fa-f-]{36}\" docs/ARCHITECTURE.md | cut -d' ' -f3) && test -n \"$id\" && printf '%s' \"$index\" | jq -e --arg id \"$id\" 'any(.issues[]; .issue_id == $id and .type == \"DOCUMENT_CHANGE\")' >/dev/null || exit 1; done"}
       - id: A2
-        text: DOC-1의 change.after 또는 compatibility에 "현재 범위 제외, 복귀는 새 DOCUMENT_CHANGE로 제안"(D-11)이 있고, transition.rollback에 A§19 복구 방법이 있다
-        check: {type: manual, how: "merge된 DOC-1 본문의 change, compatibility, transition.rollback을 D-11과 A§19 복구 방법에 대조한다"}
+        text: Shared d0c997c의 DOC-1 본문에서 change.after 또는 compatibility에 현재 범위 제외와 "복귀는 새 DOCUMENT_CHANGE로 제안"(D-11)이 있고, transition.rollback에 A§19 복구 방법(마지막으로 검증된 Component 조합과 계약 commit 8b1efb0으로 되돌림)이 있다 (manual에서 바꿈, spec D-03)
+        check: {type: command, run: "id=$(grep -Eo '^- DOC-1: ISSUE-[0-9A-Fa-f-]{36}' docs/ARCHITECTURE.md | cut -d' ' -f3) && test -n \"$id\" && gh api --method GET \"repos/$(jq -r .repository SHARED_CONFIG.json)/contents/issues/$id.yaml\" -f ref=d0c997c97129141d9853a42ce6e0d1f8f7309ae9 -H 'Accept: application/vnd.github.raw+json' | python3 -c \"import sys, yaml; d = yaml.safe_load(sys.stdin); c = d['change']['after'] + d['compatibility']; r = d['transition']['rollback']; sys.exit(not ('현재 범위' in c and '새 DOCUMENT_CHANGE' in c and '19절' in r and '검증된' in r and '8b1efb06325f711814152f4867d86e4413b4a404' in r))\""}
       - id: A3
         text: 게시한 DOC-1이 90-shared.md 2·4절에 따라 SHARED_ISSUE_STATUS.yaml에 기록되어 있고 원격 검사를 통과한다
         check: {type: command, run: "python3 -c \"import re, sys, yaml; doc = open('docs/ARCHITECTURE.md', encoding='utf-8').read(); status = (yaml.safe_load(open('SHARED_ISSUE_STATUS.yaml')) or {}).get('issues') or {}; ids = [re.search(r'^- ' + k + r': (ISSUE-[0-9A-Fa-f-]{36})', doc, re.M) for k in ['DOC-1']]; sys.exit(not all(m and m.group(1) in status for m in ids))\" && python3 agent/core/tools/validate.py --remote"}
@@ -79,25 +101,155 @@ tasks:
     scope: [docs/ARCHITECTURE.md]
     acceptance:
       - id: A1
-        text: 사용자가 전달 경로(별도 MQTT Topic 또는 Ground Truth 파일 읽기 등)를 결정했다
-        check: {type: manual, how: "docs/ARCHITECTURE.md 11.3절 D-6 재결정 항목에 사용자 결정과 날짜가 적혀 있다"}
+        text: 사용자의 전달 경로 결정((b) Ground Truth 파일 읽기)과 날짜가 docs/ARCHITECTURE.md 11.3절 D-6 재결정 항목에 적혀 있다 (manual에서 바꿈, spec D-03)
+        check: {type: command, run: "grep -Eq '^\\| D-6 재결정 \\| .*\\[결정\\] \\(b\\)\\*\\* \\(사용자, 2026-09-27\\)' docs/ARCHITECTURE.md"}
     size: S
   - id: SHARED-5
     milestone: M1
     type: chore
-    title: 변경된 Shared 계약 채택과 아키텍처 매핑 재확인
-    why: 구현은 Shared 승인 뒤에 한다(U-12). 승인된 계약 commit을 contract_ref로 고정해야 구현 task의 기준이 생긴다
+    title: Shared d0c997c를 contract_ref로 채택하고 ARCHITECTURE.md에 기록
+    why: 구현은 Shared 승인 뒤에 한다(U-12). 이 Component가 쓰는 Interface가 모두 확정된 Shared d0c997c를 contract_ref로 고정해야 VIS-n이 contract 필드로 계약 문서를 읽을 수 있다 (spec D-05, C-01, 조율 결정 C-05)
     depends_on: [SHARED-2]
     contract: [docs/ARCHITECTURE.md, docs/INTERFACES.md, docs/CONVENTIONS.md]
     scope: [SHARED_CONFIG.json, docs/ARCHITECTURE.md]
     acceptance:
       - id: A1
-        text: contract_ref가 DOC-1 merge 이후의 Shared commit 전체 SHA다
-        check: {type: command, run: "jq -er '.contract_ref | strings | select(test(\"^[0-9a-fA-F]{40}$\"))' SHARED_CONFIG.json"}
+        text: SHARED_CONFIG.json의 contract_ref가 d0c997c97129141d9853a42ce6e0d1f8f7309ae9이고 repository·component·process_ref는 바뀌지 않았다 (C-01)
+        check: {type: command, run: "test \"$(jq -r .contract_ref SHARED_CONFIG.json)\" = d0c997c97129141d9853a42ce6e0d1f8f7309ae9 && test \"$(jq -r '.repository + \" \" + .component + \" \" + .process_ref' SHARED_CONFIG.json)\" = 'dltndn-personal-project/smart-factory-shared-repository vision-inspection 6bcd2aad8e374a7e96f816051585a49cb5e30f86'"}
       - id: A2
-        text: 저장소 검사가 원격 비교까지 통과한다
+        text: 저장소 검사가 원격 비교까지 통과한다 (C-01)
         check: {type: command, run: "python3 agent/core/tools/validate.py --remote"}
       - id: A3
-        text: ARCHITECTURE.md의 계약 매핑(4절)과 참고 ref가 채택한 contract_ref 기준으로 갱신되었다
-        check: {type: manual, how: "ARCHITECTURE.md 상단의 참고 ref가 contract_ref와 같고 4절의 [제안] 표시가 승인 결과로 바뀌었는지 리뷰한다"}
+        text: docs/ARCHITECTURE.md 상단에 채택 기록 줄("> - **contract_ref 채택 (SHARED-5)**:" 뒤에 전체 SHA)이 있고, 4절 첫 문단이 contract_ref를 null로 적지 않고 채택한 SHA를 적는다 (manual에서 바꿈, spec D-03)
+        check: {type: command, run: "grep -Eq '^> - \\*\\*contract_ref 채택 \\(SHARED-5\\)\\*\\*: .*d0c997c97129141d9853a42ce6e0d1f8f7309ae9' docs/ARCHITECTURE.md && sec=$(sed -n '/^## 4\\./,/^### 4\\.1/p' docs/ARCHITECTURE.md) && printf '%s' \"$sec\" | grep -q d0c997c97129141d9853a42ce6e0d1f8f7309ae9 && ! printf '%s' \"$sec\" | grep -q null"}
     size: S
+  # M2 처리 코어: docs/plan/03-runtime.md (VIS-1), docs/plan/01-processing.md (VIS-2)
+  - id: VIS-1
+    milestone: M2
+    type: feature
+    title: 골격, 설정(config)과 한 줄 JSON 로그(logs), Makefile과 verify unit
+    why: 모든 뒤 task가 쓰는 venv·pytest 진입점, 환경 변수 설정 검증(빈 값·Topic 규칙·같은 Topic 거부), 로그 형식을 먼저 고정한다 (spec 03 1~4절, 02 4절, D-06, D-07, D-18, D-19, C-06)
+    depends_on: [SHARED-5]
+    contract: [docs/INTERFACES.md, docs/CONVENTIONS.md]
+    scope: [src/**, tests/**, pyproject.toml, requirements.txt, requirements-dev.txt, Makefile, .gitignore, agent/config.yaml, docs/spec/03-runtime.md, docs/spec/DECISIONS.md]
+    acceptance:
+      - id: A1
+        text: load_config가 기본값·환경 변수 덮어쓰기를 읽고, 잘못된 MQTT_URL·빈 값·CONVENTIONS 밖 Topic·같은 두 Topic을 설정 오류로, LOG_LEVEL을 대소문자 무시로, 없는 IMAGE_ROOT를 오류 아님으로 처리한다 (spec 03 2절, 04 3.1절)
+        check: {type: command, run: "make venv >/dev/null && .venv/bin/python -m pytest -q tests/test_config.py::test_defaults tests/test_config.py::test_env_overrides tests/test_config.py::test_invalid_mqtt_url tests/test_config.py::test_empty_value_is_error tests/test_config.py::test_invalid_topic tests/test_config.py::test_same_topics_rejected tests/test_config.py::test_log_level_case_insensitive tests/test_config.py::test_missing_image_root_is_not_error"}
+      - id: A2
+        text: iso_ms가 밀리초 3자리로 버리고 Z를 붙이며, Logger가 ts·level·event를 맨 앞에 둔 한 줄 JSON을 쓰고 LOG_LEVEL보다 낮은 수준을 거르며 비ASCII를 그대로 둔다 (spec 02 4절, C-06)
+        check: {type: command, run: "make venv >/dev/null && .venv/bin/python -m pytest -q tests/test_logs.py::test_iso_ms_truncates tests/test_logs.py::test_record_is_one_json_line_with_leading_keys tests/test_logs.py::test_level_filter tests/test_logs.py::test_non_ascii_kept"}
+      - id: A3
+        text: 직접 의존만 == 로 고정되어 있다. requirements.txt는 paho-mqtt 한 줄, requirements-dev.txt는 -r requirements.txt와 pytest 한 줄이다 (spec 03 3절, D-06)
+        check: {type: command, run: "python3 -c \"import re, sys; rd = lambda f: [l.strip() for l in open(f) if l.strip() and not l.lstrip().startswith('#')]; r = rd('requirements.txt'); d = rd('requirements-dev.txt'); sys.exit(not (len(r) == 1 and re.fullmatch(r'paho-mqtt==[0-9.]+', r[0]) and d[:1] == ['-r requirements.txt'] and len(d) == 2 and re.fullmatch(r'pytest==[0-9.]+', d[1])))\""}
+      - id: A4
+        text: venv·캐시·로컬 데이터가 git에 잡히지 않는다 (spec 03 7절)
+        check: {type: command, run: "for p in .venv/.installed src/vision_inspection/__pycache__/x.pyc tests/__pycache__/x.pyc .pytest_cache/x .env data/ground_truth/products.jsonl; do git check-ignore -q \"$p\" || exit 1; done"}
+      - id: A5
+        text: agent/config.yaml verify에 spec 04 4절의 unit 명령이 그대로 있고, make test가 실제로 테스트를 모아 모두 통과한다(pytest 요약이 'N passed'로 시작)
+        check: {type: command, run: "python3 -c \"import sys, yaml; v = yaml.safe_load(open('agent/config.yaml'))['verify']; sys.exit(0 if {'name': 'unit', 'run': 'make test'} in v else 1)\" && out=$(make test 2>&1) && printf '%s\\n' \"$out\" | grep -Eq '^[0-9]+ passed'"}
+    size: M
+  - id: VIS-2
+    milestone: M2
+    type: feature
+    title: Product Created 검증, Ground Truth 조회, Vision Result 조립(payload, ground_truth, process)
+    why: pass-through 처리 규칙 전체를 Broker 없이 확정하고, Shared 예시와 같은 결과(키 순서 포함)와 미발행 reason 9개를 단위 테스트로 고정한다 (spec 01, D-10, D-11, D-12, D-21, C-02, C-03, C-07)
+    depends_on: [VIS-1]
+    contract: [docs/INTERFACES.md, docs/CONVENTIONS.md]
+    scope: [src/**, tests/**, docs/spec/01-processing.md, docs/spec/DECISIONS.md]
+    acceptance:
+      - id: A1
+        text: tests/fixtures/shared_d0c997c/의 세 파일이 contract_ref INTERFACES의 JSON 예시(Product Created, Vision Result, Ground Truth 줄)와 같은 값이고, vision_result.json은 spec 01 4절의 10개 키를 그 순서로 가지며(judgement_source PASS_THROUGH, bbox null), ground_truth.jsonl은 \n으로 끝나는 한 줄이다 (C-02)
+        check: {type: command, run: "d=tests/fixtures/shared_d0c997c && test -f $d/product_created.json && test \"$(wc -l < $d/ground_truth.jsonl)\" -eq 1 && test \"$(tail -c 1 $d/ground_truth.jsonl | od -An -c | tr -d ' ')\" = '\\n' && python3 -c \"import json, sys; d = json.load(open('tests/fixtures/shared_d0c997c/vision_result.json')); sys.exit(not (list(d) == ['schema_version', 'product_id', 'timestamp', 'defect', 'defect_type', 'confidence', 'bbox', 'image_path', 'gradcam_path', 'judgement_source'] and d['judgement_source'] == 'PASS_THROUGH' and d['bbox'] is None and d['schema_version'] == 1))\" && gh api --method GET \"repos/$(jq -r .repository SHARED_CONFIG.json)/contents/docs/INTERFACES.md\" -f ref=\"$(jq -r .contract_ref SHARED_CONFIG.json)\" -H 'Accept: application/vnd.github.raw+json' | python3 -c \"import json, re, sys; t = sys.stdin.read(); q = chr(96) * 3; ex = [json.loads(b) for b in re.findall(q + 'json\\n(.*?)' + q, t, re.S)]; p = 'tests/fixtures/shared_d0c997c/'; fs = [json.load(open(p + 'product_created.json')), json.load(open(p + 'vision_result.json')), json.loads(open(p + 'ground_truth.jsonl').read())]; sys.exit(not (ex and all(f in ex for f in fs)))\""}
+      - id: A2
+        text: Shared 예시 Product Created와 Ground Truth 줄로 만든 결과가 예시 Vision Result와 같은 dict이고 encode의 키 순서도 같으며, Ground Truth의 다른 필드가 결과에 없다 (C-02)
+        check: {type: command, run: "make venv >/dev/null && .venv/bin/python -m pytest -q tests/test_payload.py::test_shared_example_parses tests/test_payload.py::test_build_matches_shared_example tests/test_payload.py::test_encoded_key_order_matches_shared_example tests/test_payload.py::test_no_other_ground_truth_fields"}
+      - id: A3
+        text: Product Created 검증이 spec 01 2절 순서대로 invalid_json(UTF-8 아님, 배열, NaN 포함)·invalid_payload(schema_version true 등)·invalid_product_id(유니코드 숫자, 끝 \n)·invalid_timestamp·invalid_image_path를 내고 모르는 필드를 무시한다 (C-03)
+        check: {type: command, run: "make venv >/dev/null && .venv/bin/python -m pytest -q tests/test_payload.py::test_unknown_fields_ignored tests/test_payload.py::test_invalid_json tests/test_payload.py::test_invalid_payload tests/test_payload.py::test_invalid_product_id tests/test_payload.py::test_invalid_timestamp tests/test_payload.py::test_invalid_image_path"}
+      - id: A4
+        text: Ground Truth 조회가 잘린 마지막 줄·빈 파일을 missing으로, 중복을 duplicate로, 깨진 줄을 건너뛰고 세며, 읽기 실패를 unreadable로, defect·defect_type 위반을 invalid로 보고 다른 필드는 보지 않는다 (spec 01 3절, C-03)
+        check: {type: command, run: "make venv >/dev/null && .venv/bin/python -m pytest -q tests/test_ground_truth.py::test_shared_example_line_found tests/test_ground_truth.py::test_incomplete_last_line_ignored tests/test_ground_truth.py::test_empty_file_is_missing tests/test_ground_truth.py::test_duplicate tests/test_ground_truth.py::test_bad_lines_skipped_and_counted tests/test_ground_truth.py::test_unreadable tests/test_ground_truth.py::test_invalid tests/test_ground_truth.py::test_other_fields_ignored"}
+      - id: A5
+        text: process()가 정상 입력에 Publish를, spec 01 5절의 reason 9개 각각에 Drop을 돌려주고, Drop의 product_id·timestamp는 검증을 통과한 값만 싣고, bad_lines를 Publish에도 싣는다 (C-03)
+        check: {type: command, run: "make venv >/dev/null && .venv/bin/python -m pytest -q tests/test_process.py::test_publish_outcome tests/test_process.py::test_each_reason tests/test_process.py::test_drop_carries_ids_only_when_valid tests/test_process.py::test_bad_lines_reported_on_publish"}
+      - id: A6
+        text: 1,800줄 Ground Truth에서 process() 한 번이 평균 50 ms 이하이고 측정값을 출력한다 (C-07 단위, D-21)
+        check: {type: command, run: "make venv >/dev/null && .venv/bin/python -m pytest -q -s tests/test_process.py::test_mean_time_1800_lines"}
+      - id: A7
+        text: payload·ground_truth·process 모듈이 paho를 import하지 않는다 (spec 01 1절)
+        check: {type: command, run: "for f in payload ground_truth process; do test -f src/vision_inspection/$f.py || exit 1; done && ! grep -Eq '^[[:space:]]*(import|from)[[:space:]]+paho' src/vision_inspection/payload.py src/vision_inspection/ground_truth.py src/vision_inspection/process.py"}
+      - id: A8
+        text: 단위 테스트 전체가 통과한다
+        check: {type: command, run: "make test"}
+    size: M
+  # M3 MQTT 서비스: docs/plan/02-service.md
+  - id: VIS-3
+    milestone: M3
+    type: feature
+    title: paho MQTT 서비스(app, __main__)와 Docker Mosquitto 연동 테스트, verify broker
+    why: 처리 코어를 실제 Broker에 붙여 Product Created 하나에 Vision Result 하나를 QoS 1·retain false로 발행하고, 재연결·재구독, 기동 확인 파일, SIGTERM·설정 오류 종료 코드를 spec대로 만든다 (spec 02, D-08, D-09, D-13~D-16, C-04, C-05, C-06, C-07)
+    depends_on: [VIS-2]
+    contract: [docs/INTERFACES.md, docs/CONVENTIONS.md]
+    scope: [src/**, tests/**, Makefile, agent/config.yaml, docs/spec/02-service.md, docs/spec/DECISIONS.md]
+    acceptance:
+      - id: A1
+        text: 잘못된 설정(MQTT_URL=http://h)으로 python -m vision_inspection을 띄우면 10초 안에 종료 코드 2로 끝나고 마지막 줄이 error·invalid_config다 (C-05 일부)
+        check: {type: command, run: "make venv >/dev/null && .venv/bin/python -m pytest -q tests/test_main.py::test_invalid_config_exits_2"}
+      - id: A2
+        text: 실제 Mosquitto에서 Shared 예시 Product Created에 대해 5초 안에 Shared 예시와 같은 Vision Result 하나가 qos 1로 오고, received와 published(latency_ms int 0 이상) 로그가 남으며, 그 뒤 새 구독자가 retained 결과를 받지 않는다(retain false 발행) (C-02, C-04, C-06)
+        check: {type: command, run: "make venv >/dev/null && .venv/bin/python -m pytest -q tests/test_broker.py::test_publishes_shared_example"}
+      - id: A3
+        text: 잘못된 입력 8종 뒤 정상 sentinel을 보내면 결과는 sentinel 하나뿐이고 dropped reason이 보낸 순서와 같으며, Ground Truth 파일이 나중에 생겨도 상태 없이 이어서 처리한다 (C-03, C-04)
+        check: {type: command, run: "make venv >/dev/null && .venv/bin/python -m pytest -q tests/test_broker.py::test_invalid_inputs_not_published tests/test_broker.py::test_ground_truth_created_later"}
+      - id: A4
+        text: Broker 재시작 때 disconnected와 함께 기동 확인 파일이 지워지고, 15초 안에 다시 connected(기동 확인 파일 다시 생성)되어 결과를 발행하고, Broker보다 먼저 떠도 connect_failed 뒤 15초 안에 연결되며, SIGTERM에 5초 안 종료 코드 0·마지막 줄 stopped·기동 확인 파일 삭제다 (C-05)
+        check: {type: command, run: "make venv >/dev/null && .venv/bin/python -m pytest -q tests/test_broker.py::test_broker_restart_resubscribes tests/test_broker.py::test_starts_before_broker tests/test_broker.py::test_sigterm_exits_0"}
+      - id: A5
+        text: 1,800줄 Ground Truth에서 30개 Vision Result 지연이 모두 2초 이하이고 중앙값 0.5초 이하이며 측정값을 출력한다 (C-07 연동, D-21)
+        check: {type: command, run: "make venv >/dev/null && .venv/bin/python -m pytest -q -s tests/test_broker.py::test_latency_1800_lines"}
+      - id: A6
+        text: 연동 테스트에 skip 경로가 없고 docker 마커가 붙어 있다(Docker를 못 쓰면 실패, make test에서는 빠짐. spec 04 1절)
+        check: {type: command, run: "test -f tests/test_broker.py && ! grep -Eq 'pytest\\.skip|mark\\.skip|skipif|importorskip' tests/test_broker.py tests/conftest.py && grep -q 'mark.docker' tests/test_broker.py"}
+      - id: A7
+        text: paho를 import하는 모듈은 src/vision_inspection/app.py 하나다 (spec 02 1절)
+        check: {type: command, run: "test -f src/vision_inspection/app.py && test -f src/vision_inspection/__main__.py && test \"$(grep -rlE '^[[:space:]]*(import|from)[[:space:]]+paho' src)\" = src/vision_inspection/app.py"}
+      - id: A8
+        text: agent/config.yaml verify에 spec 04 4절의 broker 명령이 그대로 있고, make docker-test가 실제로 테스트를 모아 모두 통과한다(pytest 요약이 'N passed'로 시작)
+        check: {type: command, run: "python3 -c \"import sys, yaml; v = yaml.safe_load(open('agent/config.yaml'))['verify']; sys.exit(0 if {'name': 'broker', 'run': 'make docker-test'} in v else 1)\" && out=$(make docker-test 2>&1) && printf '%s\\n' \"$out\" | grep -Eq '^[0-9]+ passed'"}
+      - id: A9
+        text: 단위 테스트 전체가 통과한다
+        check: {type: command, run: "make test"}
+    size: M
+  # M4 패키징: docs/plan/03-runtime.md
+  - id: VIS-4
+    milestone: M4
+    type: feature
+    title: Dockerfile, 단독 확인용 compose.yaml, compose smoke와 verify smoke
+    why: integration이 저장소 루트 Dockerfile로 이미지를 만들고 읽기 전용 /data 마운트와 healthcheck로 조합할 수 있어야 한다. smoke가 그 실행 정의 전체를 자동으로 확인한다 (spec 03 5~7절, AGREEMENTS V-04·V-05, D-15, D-17, C-08, C-09)
+    depends_on: [VIS-3]
+    contract: [docs/INTERFACES.md, docs/CONVENTIONS.md]
+    scope: [Dockerfile, .dockerignore, compose.yaml, .env.example, tests/**, Makefile, agent/config.yaml, docs/COMPONENT.md, docs/spec/03-runtime.md, docs/spec/DECISIONS.md]
+    acceptance:
+      - id: A1
+        text: compose smoke가 통과한다. up --build --wait로 healthy, /data RW=false, 볼륨에 넣은 Ground Truth로 P-00000001(dent)·P-00000002(양품) 결과만 오고, 로그가 모두 JSON이며, stop -t 10 뒤 종료 코드 0과 마지막 줄 stopped다 (spec 04 3.3절, C-04, C-05, C-06, C-08)
+        check: {type: command, run: "make venv >/dev/null && .venv/bin/python -m pytest -q tests/test_smoke.py::test_compose_smoke"}
+      - id: A2
+        text: smoke 테스트에 skip 경로가 없다(Docker를 못 쓰면 실패, spec 04 1절)
+        check: {type: command, run: "test -f tests/test_smoke.py && ! grep -Eq 'pytest\\.skip|mark\\.skip|skipif|importorskip' tests/test_smoke.py tests/conftest.py"}
+      - id: A3
+        text: Dockerfile이 spec 03 5절의 기반 이미지·HEALTHCHECK·진입점을 쓰고 포트·볼륨을 선언하지 않으며, 환경 변수와 .env 없이 해석한 compose 정의에서 프로젝트 이름이 vision-inspection, vision-inspection 서비스의 /data가 읽기 전용이고 포트가 없으며 Mosquitto는 127.0.0.1:1883에 묶인다 (C-08, V-04, V-05)
+        check: {type: command, run: "grep -qx 'FROM python:3.12-slim-bookworm' Dockerfile && grep -q '^HEALTHCHECK' Dockerfile && grep -Eq '^ENTRYPOINT \\[\"python\", ?\"-m\", ?\"vision_inspection\"\\]' Dockerfile && ! grep -Eq '^(EXPOSE|VOLUME)' Dockerfile && env -u VIS_MQTT_PORT -u COMPOSE_PROJECT_NAME docker compose --env-file /dev/null config --format json | python3 -c \"import json, sys; c = json.load(sys.stdin); s = c['services']['vision-inspection']; v = s['volumes']; p = c['services']['mosquitto']['ports']; sys.exit(not (c['name'] == 'vision-inspection' and len(v) == 1 and v[0]['target'] == '/data' and v[0].get('read_only') is True and v[0]['type'] == 'volume' and not s.get('ports') and len(p) == 1 and p[0]['host_ip'] == '127.0.0.1' and str(p[0]['published']) == '1883'))\""}
+      - id: A4
+        text: .env.example에 spec 03 2절의 환경 변수 7개가 있고, .dockerignore가 tests·docs·agent·.venv·.git·data·.env를 뺀다 (spec 03 5·7절)
+        check: {type: command, run: "for v in MQTT_URL MQTT_CLIENT_ID PRODUCT_CREATED_TOPIC VISION_RESULT_TOPIC IMAGE_ROOT LOG_LEVEL HEALTH_FILE; do grep -Eq \"^#? ?$v=\" .env.example || exit 1; done && for e in .git .venv tests docs agent data .env; do grep -qx \"$e\" .dockerignore || exit 1; done"}
+      - id: A5
+        text: 이미지 안에 /data가 없다(빈 named volume에 이미지 내용이 복사되지 않게, D-17)
+        check: {type: command, run: "docker build -q -t vision-inspection:local . >/dev/null && docker run --rm --entrypoint sh vision-inspection:local -c 'test ! -e /data'"}
+      - id: A6
+        text: docs/COMPONENT.md 실행 절이 실제 명령(docker compose up -d --build --wait, make smoke, 로컬 실행)을 적고 미정 표시가 없다 (C-09)
+        check: {type: command, run: "grep -q 'docker compose up -d --build --wait' docs/COMPONENT.md && grep -q 'make smoke' docs/COMPONENT.md && grep -q 'python -m vision_inspection' docs/COMPONENT.md && ! grep -q '<미정' docs/COMPONENT.md"}
+      - id: A7
+        text: agent/config.yaml verify가 spec 04 4절 네 항목(agent-files, unit, broker, smoke)과 그 순서 그대로이고, make smoke가 실제로 테스트를 모아 통과한다 (C-09. 나머지 셋은 verify가 함께 돌린다)
+        check: {type: command, run: "python3 -c \"import sys, yaml; v = yaml.safe_load(open('agent/config.yaml'))['verify']; need = [{'name': 'agent-files', 'run': 'python3 agent/core/tools/validate.py'}, {'name': 'unit', 'run': 'make test'}, {'name': 'broker', 'run': 'make docker-test'}, {'name': 'smoke', 'run': 'make smoke'}]; sys.exit(0 if v == need else 1)\" && out=$(make smoke 2>&1) && printf '%s\\n' \"$out\" | grep -Eq '^[0-9]+ passed'"}
+    size: M
