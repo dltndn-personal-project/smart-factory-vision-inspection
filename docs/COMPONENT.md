@@ -47,11 +47,34 @@ task `scope` glob의 기준이다. 원본은 `docs/spec/03-runtime.md` 1절이�
 
 ## 실행·검증 환경
 
-원본은 `docs/spec/03-runtime.md`(설정 2절, 로컬 실행 4절, Dockerfile 5절, compose 6절)다. 아래는 VIS-4가 실제 명령으로 갱신한다.
+원본은 `docs/spec/03-runtime.md`(설정 2절, 로컬 실행 4절, Dockerfile 5절, compose 6절)다. 명령은 모두 저장소 루트에서 실행한다.
 
-- 설정: 환경 변수만(`MQTT_URL`, `MQTT_CLIENT_ID`, `PRODUCT_CREATED_TOPIC`, `VISION_RESULT_TOPIC`, `IMAGE_ROOT`, `LOG_LEVEL`, `HEALTH_FILE`). 빈 값은 설정 오류(종료 코드 2).
-- 로컬 실행(개발용): `make venv`, `docker compose up -d mosquitto`, `PYTHONPATH=src MQTT_URL=mqtt://127.0.0.1:1883 IMAGE_ROOT=./data HEALTH_FILE=/tmp/vis-dev.connected .venv/bin/python -m vision_inspection`.
-- 단독 확인: 저장소 루트에서 `docker compose up -d --build --wait`. 결과는 `docker compose exec -T mosquitto mosquitto_sub -v -t factory/vision/result`, 로그는 `docker compose logs -f vision-inspection`.
-- 필요한 것: Docker Desktop 실행, 첫 의존 설치·이미지 빌드에 인터넷(`docs/spec/HUMAN.md` H-1).
+- 설정: 환경 변수만(`MQTT_URL`, `MQTT_CLIENT_ID`, `PRODUCT_CREATED_TOPIC`, `VISION_RESULT_TOPIC`, `IMAGE_ROOT`, `LOG_LEVEL`, `HEALTH_FILE`). 기본값은 컨테이너 기준이며 `.env.example`에 있다. 빈 값은 설정 오류(종료 코드 2).
+- 이미지: 저장소 루트 `Dockerfile`(`python:3.12-slim-bookworm`, 진입점 `python -m vision_inspection`, 포트 없음, `HEALTHCHECK`는 기동 확인 파일 `test -f "$HEALTH_FILE"`). 로컬 태그는 `vision-inspection:local`(`docker build -t vision-inspection:local .`).
+- 단독 확인(Mosquitto 포함, factory-simulator 없이):
+
+  ```sh
+  docker compose up -d --build --wait            # vision-inspection이 healthy(구독 SUBACK 받음)가 될 때까지 기다린다
+  docker run --rm -i -v vision-inspection_image-storage:/data eclipse-mosquitto:2.1.2-alpine \
+    sh -c 'mkdir -p /data/ground_truth && cat >> /data/ground_truth/products.jsonl' < gt.jsonl   # gt.jsonl: 넣을 Ground Truth 줄(각 줄 끝 \n)
+  docker compose exec -T mosquitto mosquitto_sub -v -t factory/vision/result   # 결과 보기
+  docker compose logs -f vision-inspection                                      # 한 줄 JSON 로그
+  docker compose down -v
+  ```
+
+  Mosquitto는 `127.0.0.1:${VIS_MQTT_PORT:-1883}`에만 묶인다. `/data`(named volume `image-storage`)는 읽기 전용 마운트이고 처음에는 비어 있다.
+- 로컬 실행(개발용, Docker는 broker만):
+
+  ```sh
+  make venv
+  docker compose up -d mosquitto
+  mkdir -p data/ground_truth
+  PYTHONPATH=src MQTT_URL=mqtt://127.0.0.1:1883 IMAGE_ROOT=./data HEALTH_FILE=/tmp/vis-dev.connected \
+    .venv/bin/python -m vision_inspection
+  ```
+
+- 테스트: `make test`(단위), `make docker-test`(Docker Mosquitto 연동), `make smoke`(compose smoke: 프로젝트 이름 `vis-smoke`, 빈 호스트 포트, 빌드·healthy·읽기 전용 `/data`·결과 두 개·JSON 로그·`stop` 뒤 종료 코드 0 확인, 끝나면 `down -v`). Docker를 쓸 수 없으면 `docker-test`·`smoke`는 실패한다.
+- 필요한 것: Python 3.12, Docker Desktop 실행, 첫 의존 설치·이미지 빌드에 인터넷(`docs/spec/HUMAN.md` H-1).
+- 시스템 조합(시스템 compose, Image Storage 마운트, 기동 확인)은 integration이 `docs/spec/AGREEMENTS.md` V-04·V-05에 맞춰 정의한다.
 
 공통 검증 명령은 `agent/config.yaml`의 `verify`에 둔다. 추가 시점과 명령은 `docs/spec/04-verification.md` 4절에 고정되어 있다: `agent-files`(BOOT-1), `unit`(VIS-1, `make test`), `broker`(VIS-3, `make docker-test`), `smoke`(VIS-4, `make smoke`).
