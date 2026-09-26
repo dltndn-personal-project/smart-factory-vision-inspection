@@ -1,5 +1,5 @@
 task: VIS-3
-phase: plan
+phase: execute
 base_commit: 166ee718e80a90387d11b8539ac6abec42088831
 started_at: '2026-09-26T18:35:09Z'
 steps:
@@ -7,11 +7,12 @@ steps:
     on_connect 구독과 sub_mid, on_subscribe에서 기동 확인 파일·connected, 실패·끊김 콜백, 콜백 예외 처리
     (spec 02 1·5절)'
   check: .venv/bin/python -c "import vision_inspection.app" (PYTHONPATH=src)
-  done: false
+  done: true
+  note: step 2의 on_message·on_publish와 같은 파일이라 한 commit으로 함께 작성했다
 - do: 'app.py on_message·on_publish: process() 호출, warning·dropped·publish() rc 처리(MQTT_ERR_NO_CONN
     수용), pending[mid], published.latency_ms (spec 02 2·3절, D-13)'
   check: make test
-  done: false
+  done: true
 - do: '__main__.py: main() -> int, 설정 오류 2, 신호 처리기 → disconnect(), stopped 0, 예상 밖
     예외 1 (spec 02 6절, D-16). tests/test_main.py'
   check: A1
@@ -29,4 +30,4 @@ steps:
   done: false
 attempts: {}
 evidence: {}
-next_action: 'step 1: src/vision_inspection/app.py 작성'
+next_action: 'step 3: __main__.py와 test_main.py commit'
