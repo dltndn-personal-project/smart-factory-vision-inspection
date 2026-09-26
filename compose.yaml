@@ -1,0 +1,16 @@
+name: vision-inspection
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2.1.2-alpine
+    command: ["mosquitto", "-c", "/mosquitto-no-auth.conf"]
+    ports: ["127.0.0.1:${VIS_MQTT_PORT:-1883}:1883"]
+  vision-inspection:
+    build: .
+    image: vision-inspection:local
+    environment:
+      MQTT_URL: mqtt://mosquitto:1883
+      IMAGE_ROOT: /data
+    volumes: ["image-storage:/data:ro"]
+    depends_on: [mosquitto]
+volumes:
+  image-storage: {}
