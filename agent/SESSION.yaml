@@ -10,7 +10,7 @@ steps:
 - do: python3 agent/core/tools/validate.py를 실행해 통과를 확인하고 agent/config.yaml verify에
     agent-files로 넣는다(spec 04 4절 1번)
   check: A2
-  done: false
+  done: true
 attempts: {}
 evidence: {}
-next_action: 'step 2: verify에 agent-files 추가'
+next_action: agent.py verify
