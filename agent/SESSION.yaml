@@ -1,8 +1,29 @@
-task: null
-phase: null
-base_commit: null
-started_at: null
-steps: []
+task: VIS-4
+phase: plan
+base_commit: 3180b3c63d0ae34afb210347dbb2fa652e7634d5
+started_at: '2026-09-26T18:45:59Z'
+steps:
+- do: Dockerfile(spec 03 5절 그대로)과 .dockerignore 작성, docker build -t vision-inspection:local
+    확인
+  check: A5
+  done: false
+- do: compose.yaml(spec 03 6절 그대로)과 .env.example(변수 7개 주석) 작성
+  check: A3, A4
+  done: false
+- do: tests/test_smoke.py::test_compose_smoke(spec 04 3.3절 1~9단계, -p vis-smoke, 빈
+    포트, 실패 시 로그 100줄, 항상 down -v)
+  check: A1, A2
+  done: false
+- do: Makefile smoke 대상과 .PHONY. make smoke 두 번(첫 빌드, 캐시 뒤) 통과와 시간 기록
+  check: make smoke 출력이 'N passed'
+  done: false
+- do: docs/COMPONENT.md 실행·검증 환경 절을 실제 명령으로 갱신
+  check: A6
+  done: false
+- do: 'agent/config.yaml verify에 {name: smoke, run: "make smoke"} 추가, validate.py
+    --remote'
+  check: A7
+  done: false
 attempts: {}
 evidence: {}
-next_action: null
+next_action: 'step 1: Dockerfile과 .dockerignore 작성 후 docker build'
