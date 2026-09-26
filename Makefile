@@ -1,4 +1,4 @@
-.PHONY: venv test
+.PHONY: venv test docker-test
 
 venv: .venv/.installed
 
@@ -8,3 +8,6 @@ venv: .venv/.installed
 
 test: venv
 	.venv/bin/python -m pytest -q -m "not docker and not smoke"
+
+docker-test: venv
+	.venv/bin/python -m pytest -q -m docker
