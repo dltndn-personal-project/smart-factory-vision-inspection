@@ -12,10 +12,12 @@ steps:
 - do: SHARED_ISSUE_STATUS.yaml에 6건을 색인 순서대로 기록하고 validate.py --remote로 확인한다 (90-shared.md
     4절)
   check: A2
-  done: false
+  done: true
+  note: no_impact 3건(a47146af, 63f6789a, 95d74411), affected 3건(9f81b8ac, fde005ee,
+    c8fad59b). validate.py --remote 통과
 - do: docs/ARCHITECTURE.md 11.7절 게시 기록·PLAN 연결 상태와 Shared 검토 기록 위치를 갱신한다
   check: A1
   done: false
 attempts: {}
 evidence: {}
-next_action: 'step 2: SHARED_ISSUE_STATUS.yaml에 6건을 색인 순서대로 기록'
+next_action: 'step 3: ARCHITECTURE.md 11.7절 상태와 Shared 검토 기록 위치 갱신'

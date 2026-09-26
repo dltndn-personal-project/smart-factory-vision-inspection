@@ -1,2 +1,84 @@
 # Issue ID를 issues의 키로 사용한다. 색인 순서대로 기록하며 항목이 없으면 unreviewed다.
-issues: {}
+issues:
+  ISSUE-a47146af-bbf3-4aa3-bfed-5cdcc64a16b5:
+    status: no_impact
+    source_revision: d0c997c97129141d9853a42ce6e0d1f8f7309ae9
+    component_revision: 05ac2bb5e0541ea955cca74a9e220eb67a371368
+    contract_ref: null
+    reason: >-
+      vision-inspection이 게시한 범위 축소 제안(I-1)이다. 요청한 조치는 뒤의 Issue로 모두 처리되어
+      이 Issue 자체로 추가할 변경은 없다. (1) 범위 축소 채택은 ISSUE-c8fad59b, (2) 승인 책임자 지정은
+      ISSUE-95d74411, (3) Simulator Vision 학습 데이터셋 생성 여부는 ISSUE-9f81b8ac·fde005ee(생성하지 않음)로
+      정해졌다. 이 Component에 대한 영향은 ISSUE-c8fad59b 기록에서 추적한다.
+    evidence:
+      - "Shared d0c997c issues/index.json: ISSUE-95d74411, ISSUE-9f81b8ac, ISSUE-fde005ee, ISSUE-c8fad59b가 모두 이 Issue를 related_issues로 가리킴"
+      - "docs/ARCHITECTURE.md 11.7절 게시 기록 (I-1)"
+  ISSUE-63f6789a-a26b-42a4-8b3c-3dcfeaa07e1f:
+    status: no_impact
+    source_revision: d0c997c97129141d9853a42ce6e0d1f8f7309ae9
+    component_revision: 05ac2bb5e0541ea955cca74a9e220eb67a371368
+    contract_ref: null
+    reason: >-
+      vision-inspection이 게시한 명확화 질문(I-4)이다. Q-6(밀리초), Q-7(factory-simulator Topic QoS·retain),
+      Q-9(product_id 유일성, production sequence), Q-12(Docker Compose·named volume), Q-14(생산 분당 30개),
+      Q-15(오류 응답 Topic 없음, 로그만)는 ISSUE-9f81b8ac·fde005ee의 CONVENTIONS·INTERFACES로 답이 정해졌고,
+      Vision 처리 시각 필드와 Vision 오류 표현은 ISSUE-c8fad59b(Vision Result)로 정해졌다. 답이 없는 Q-11(Inspection Image),
+      Q-17(ARCHITECTURE 6절 그림 문구), Vision 결과 지연 목표는 현재 범위(pass-through) 구현에 필요하지 않다.
+      이 Issue 자체로 추가할 변경은 없다.
+    evidence:
+      - "Shared d0c997c docs/CONVENTIONS.md Timestamp·ID·Payload·오류 표현, docs/INTERFACES.md Interface 목록·Product Created·Vision Result"
+      - "ISSUE-fde005ee observation [I-1, I-4와의 관계] 절의 답·미답 목록"
+  ISSUE-95d74411-a2aa-4520-85ec-b2a90d9b74df:
+    status: no_impact
+    source_revision: d0c997c97129141d9853a42ce6e0d1f8f7309ae9
+    component_revision: 05ac2bb5e0541ea955cca74a9e220eb67a371368
+    contract_ref: null
+    reason: >-
+      계약 변경 승인 책임자를 @dltndn으로 지정(ARCHITECTURE 19절, CODEOWNERS)한 거버넌스 변경이다.
+      Interface·Payload·ID·시간 규칙과 agent-core는 바뀌지 않아 이 Component 구현에 변경이 필요 없다.
+      다음 contract_ref 채택 때 함께 채택한다.
+    evidence:
+      - "ISSUE-95d74411 compatibility: 기존 Component 구현에 영향 없음"
+      - "vision-inspection에 구현 코드 없음 (main 05ac2bb 기준 docs·agent 파일만 존재)"
+  ISSUE-9f81b8ac-d26e-422b-aaed-02adad6ff320:
+    status: affected
+    source_revision: d0c997c97129141d9853a42ce6e0d1f8f7309ae9
+    component_revision: 05ac2bb5e0541ea955cca74a9e220eb67a371368
+    contract_ref: null
+    reason: >-
+      factory-simulator 계약 확정으로 Vision 입력과 공통 규칙이 정해졌다. 구현 시 반영할 것:
+      Product Created(schema_version 1, product_id, 밀리초 timestamp, image_path, QoS 1) 파싱과 모르는 필드 무시,
+      JPEG 640x640 이미지 전제와 products/의 점 파일 무시, ground_truth/products.jsonl 형식(완성되지 않은 마지막 줄 무시),
+      CONVENTIONS(밀리초 3자리 timestamp, snake_case, 대문자 열거값·소문자 결함 유형, px 좌표, 오류는 로그만),
+      Docker Compose·named volume. 구현이 아직 없어 영향만 기록한다. 조치는 contract_ref 채택(SHARED-5)과 구현 task에서 한다.
+    evidence:
+      - "ISSUE-9f81b8ac compatibility의 vision-inspection 항목 (Product Created 파싱, 이미지 형식 전제, 점 파일 무시)"
+      - "docs/ARCHITECTURE.md 4.2절(입력: Product Created + Ground Truth 조회), 9절(오류 처리)이 이 계약을 전제로 쓰임"
+  ISSUE-fde005ee-49bf-4e44-a67d-07994e3c7410:
+    status: affected
+    source_revision: d0c997c97129141d9853a42ce6e0d1f8f7309ae9
+    component_revision: 05ac2bb5e0541ea955cca74a9e220eb67a371368
+    contract_ref: null
+    reason: >-
+      [vision-inspection] 절 5항목 중 1(Product Created 파싱, QoS 1)과 2(이미지 전제, 점 파일 무시)는 구현 때 반영한다.
+      3(Simulator는 training/·evaluation/에 쓰지 않음)은 현재 범위에서 학습·평가를 하지 않으므로 영향 없음.
+      4(ground_truth/products.jsonl 사용)는 ISSUE-c8fad59b로 pass-through 판정값 전달 목적의 읽기가 계약에 들어갔다.
+      5(gradcam/ 쓰기 권한 마운트)는 현재 범위에서 gradcam/에 쓰지 않으므로 읽기 전용 마운트로 충분하다(integration과 조율).
+      구현이 아직 없어 영향만 기록한다.
+    evidence:
+      - "ISSUE-fde005ee observation [vision-inspection] 1~5항"
+      - "Shared d0c997c docs/INTERFACES.md Image Reference(ground_truth/ 읽기 주체에 vision-inspection, gradcam/ 비어 있음)"
+  ISSUE-c8fad59b-796c-42aa-b969-be0be65eae43:
+    status: affected
+    source_revision: d0c997c97129141d9853a42ce6e0d1f8f7309ae9
+    component_revision: 05ac2bb5e0541ea955cca74a9e220eb67a371368
+    contract_ref: null
+    reason: >-
+      vision-inspection이 게시한 DOCUMENT_CHANGE(범위 축소, Ground Truth 입력 경로, Vision Result 확정)가 merge되었다.
+      이 Component가 구현할 기준이다: Product Created 구독, ground_truth/products.jsonl에서 같은 product_id 줄의
+      defect·defect_type 읽기(읽기 전용), Vision Result(schema_version 1, factory/vision/result, QoS 1, retain false,
+      confidence·bbox·gradcam_path null, judgement_source PASS_THROUGH) 발행, 입력 오류·줄 없음·읽기 실패 시 미발행과 로그.
+      계약 채택(SHARED-5)과 구현·검증이 남아 있다.
+    evidence:
+      - "Shared PR #6 merge commit d0c997c97129141d9853a42ce6e0d1f8f7309ae9"
+      - "docs/ARCHITECTURE.md 11.7절 게시 기록 (DOC-1)"
