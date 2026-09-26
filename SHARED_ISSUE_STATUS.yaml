@@ -41,44 +41,73 @@ issues:
       - "ISSUE-95d74411 compatibility: 기존 Component 구현에 영향 없음"
       - "vision-inspection에 구현 코드 없음 (main 05ac2bb 기준 docs·agent 파일만 존재)"
   ISSUE-9f81b8ac-d26e-422b-aaed-02adad6ff320:
-    status: affected
-    source_revision: d0c997c97129141d9853a42ce6e0d1f8f7309ae9
-    component_revision: 05ac2bb5e0541ea955cca74a9e220eb67a371368
-    contract_ref: null
+    status: applied
+    source_revision: cb6dc3cc6900e9f129b2a06688c5e5e5f75fd0b8
+    component_revision: 80438d3001afc6ccd136951b678ab24f7f0f78e3
+    contract_ref: d0c997c97129141d9853a42ce6e0d1f8f7309ae9
     reason: >-
-      factory-simulator 계약 확정으로 Vision 입력과 공통 규칙이 정해졌다. 구현 시 반영할 것:
-      Product Created(schema_version 1, product_id, 밀리초 timestamp, image_path, QoS 1) 파싱과 모르는 필드 무시,
-      JPEG 640x640 이미지 전제와 products/의 점 파일 무시, ground_truth/products.jsonl 형식(완성되지 않은 마지막 줄 무시),
-      CONVENTIONS(밀리초 3자리 timestamp, snake_case, 대문자 열거값·소문자 결함 유형, px 좌표, 오류는 로그만),
-      Docker Compose·named volume. 구현이 아직 없어 영향만 기록한다. 조치는 contract_ref 채택(SHARED-5)과 구현 task에서 한다.
+      factory-simulator 계약 확정분 중 이 Component가 쓰는 것을 contract_ref d0c997c로 채택(SHARED-5)하고 구현·검증했다(VIS-1~4).
+      Product Created(schema_version 1, product_id, 밀리초 timestamp, image_path, QoS 1 구독)를 검증하고 모르는 필드는 무시한다.
+      image_path는 products/{product_id}.jpg만 받으므로 products/의 점 파일(.P-….jpg.tmp)은 거부된다. 이미지 파일은 열지 않는다
+      (JPEG 640x640 전제는 pass-through 범위에서 쓰지 않음). ground_truth/products.jsonl은 \n으로 끝난 완성된 줄만 읽고 잘린 마지막 줄은 무시한다.
+      CONVENTIONS(밀리초 3자리 timestamp, snake_case, 소문자 결함 유형, 오류는 결과 없이 로그만)와 Docker Compose·named volume(읽기 전용 /data)을 따른다.
+      Shared cb6dc3c에서 재검토: 이 Issue 본문과 이 Component가 쓰는 계약 절(Product Created, Image Reference, Ground Truth, CONVENTIONS)은 d0c997c와 같다.
     evidence:
-      - "ISSUE-9f81b8ac compatibility의 vision-inspection 항목 (Product Created 파싱, 이미지 형식 전제, 점 파일 무시)"
-      - "docs/ARCHITECTURE.md 4.2절(입력: Product Created + Ground Truth 조회), 9절(오류 처리)이 이 계약을 전제로 쓰임"
+      - "main 80438d3(VIS-4 PR #12 merge)에서 make test 132 passed, make docker-test 7 passed, make smoke 1 passed (2026-09-27)"
+      - "tests/test_payload.py test_shared_example_parses, test_unknown_fields_ignored, test_invalid_timestamp, test_invalid_image_path(products/.P-00000001.jpg.tmp 포함)"
+      - "tests/test_ground_truth.py test_incomplete_last_line_ignored, test_bad_lines_skipped_and_counted; tests/test_smoke.py 끝에 \\n 없는 P-00000003 줄 → ground_truth_missing"
+      - "Shared compare d0c997c...cb6dc3c: docs/CONVENTIONS.md 변경 없음, docs/INTERFACES.md는 PdM Result·PdM Spectrum·Alarm Event 추가뿐"
   ISSUE-fde005ee-49bf-4e44-a67d-07994e3c7410:
-    status: affected
-    source_revision: d0c997c97129141d9853a42ce6e0d1f8f7309ae9
-    component_revision: 05ac2bb5e0541ea955cca74a9e220eb67a371368
-    contract_ref: null
+    status: applied
+    source_revision: cb6dc3cc6900e9f129b2a06688c5e5e5f75fd0b8
+    component_revision: 80438d3001afc6ccd136951b678ab24f7f0f78e3
+    contract_ref: d0c997c97129141d9853a42ce6e0d1f8f7309ae9
     reason: >-
-      [vision-inspection] 절 5항목 중 1(Product Created 파싱, QoS 1)과 2(이미지 전제, 점 파일 무시)는 구현 때 반영한다.
-      3(Simulator는 training/·evaluation/에 쓰지 않음)은 현재 범위에서 학습·평가를 하지 않으므로 영향 없음.
-      4(ground_truth/products.jsonl 사용)는 ISSUE-c8fad59b로 pass-through 판정값 전달 목적의 읽기가 계약에 들어갔다.
-      5(gradcam/ 쓰기 권한 마운트)는 현재 범위에서 gradcam/에 쓰지 않으므로 읽기 전용 마운트로 충분하다(integration과 조율).
-      구현이 아직 없어 영향만 기록한다.
+      [vision-inspection] 절 5항목을 구현 결과로 확인했다. 1(Product Created 파싱, QoS 1 구독)과 2(이미지 전제, 점 파일 무시)는 구현·검증했다.
+      3(Simulator는 training/·evaluation/에 쓰지 않음)은 학습·평가를 하지 않으므로 해당 없음. 4(ground_truth/products.jsonl 읽기)는
+      ISSUE-c8fad59b 기준으로 defect·defect_type만 읽어 옮긴다. 5(gradcam/ 쓰기 권한)는 현재 범위에서 gradcam/에 쓰지 않으므로
+      /data를 읽기 전용으로 마운트한다(조율 결정 C-16, AGREEMENTS V-04). 시스템 compose 마운트는 integration이 V-04에 맞춘다.
     evidence:
-      - "ISSUE-fde005ee observation [vision-inspection] 1~5항"
-      - "Shared d0c997c docs/INTERFACES.md Image Reference(ground_truth/ 읽기 주체에 vision-inspection, gradcam/ 비어 있음)"
+      - "main 80438d3에서 make test 132 passed, make docker-test 7 passed, make smoke 1 passed (2026-09-27)"
+      - "compose.yaml image-storage:/data:ro, tests/test_smoke.py가 docker inspect로 /data RW=false 확인, 이미지 안에 /data 없음(VIS-4 A5)"
+      - "tests/test_broker.py test_publishes_shared_example(QoS 1 구독·발행), tests/test_payload.py test_invalid_image_path"
   ISSUE-c8fad59b-796c-42aa-b969-be0be65eae43:
-    status: affected
-    source_revision: d0c997c97129141d9853a42ce6e0d1f8f7309ae9
-    component_revision: 05ac2bb5e0541ea955cca74a9e220eb67a371368
-    contract_ref: null
+    status: applied
+    source_revision: cb6dc3cc6900e9f129b2a06688c5e5e5f75fd0b8
+    component_revision: 80438d3001afc6ccd136951b678ab24f7f0f78e3
+    contract_ref: d0c997c97129141d9853a42ce6e0d1f8f7309ae9
     reason: >-
-      vision-inspection이 게시한 DOCUMENT_CHANGE(범위 축소, Ground Truth 입력 경로, Vision Result 확정)가 merge되었다.
-      이 Component가 구현할 기준이다: Product Created 구독, ground_truth/products.jsonl에서 같은 product_id 줄의
-      defect·defect_type 읽기(읽기 전용), Vision Result(schema_version 1, factory/vision/result, QoS 1, retain false,
-      confidence·bbox·gradcam_path null, judgement_source PASS_THROUGH) 발행, 입력 오류·줄 없음·읽기 실패 시 미발행과 로그.
-      계약 채택(SHARED-5)과 구현·검증이 남아 있다.
+      이 Component가 게시한 DOCUMENT_CHANGE(pass-through 범위, Ground Truth 입력 경로, Vision Result)를 contract_ref d0c997c로 채택하고
+      구현·검증했다. Product Created를 구독해 같은 product_id의 완성된 Ground Truth 줄에서 defect·defect_type만 읽고(읽기 전용),
+      Vision Result(schema_version 1, factory/vision/result, QoS 1, retain false, confidence·bbox·gradcam_path null,
+      judgement_source PASS_THROUGH, Shared 예시와 같은 키 순서)를 발행한다. 입력 오류·줄 없음·중복·모순·읽기 실패는 발행하지 않고 로그만 남긴다.
+      Shared cb6dc3c에서 재검토: Vision Result·Image Reference·Ground Truth 절은 d0c997c와 같다.
     evidence:
-      - "Shared PR #6 merge commit d0c997c97129141d9853a42ce6e0d1f8f7309ae9"
-      - "docs/ARCHITECTURE.md 11.7절 게시 기록 (DOC-1)"
+      - "main 80438d3에서 make test 132 passed, make docker-test 7 passed, make smoke 1 passed (2026-09-27)"
+      - "tests/test_payload.py test_build_matches_shared_example, test_encoded_key_order_matches_shared_example, test_no_other_ground_truth_fields"
+      - "tests/test_broker.py test_publishes_shared_example(Shared 예시와 같은 dict, qos 1, 새 구독자에게 retained 없음), test_invalid_inputs_not_published(8개 사유 미발행)"
+      - "tests/test_smoke.py compose 실행 정의로 P-00000001(dent)·P-00000002(양품) 결과만 발행"
+  ISSUE-2aa576c7-76db-47ce-b007-7faf79ec91dd:
+    status: no_impact
+    source_revision: cb6dc3cc6900e9f129b2a06688c5e5e5f75fd0b8
+    component_revision: 80438d3001afc6ccd136951b678ab24f7f0f78e3
+    contract_ref: d0c997c97129141d9853a42ce6e0d1f8f7309ae9
+    reason: >-
+      predictive-maintenance가 PdM Result(factory/pdm/result)를 확정하고 PdM Spectrum(factory/pdm/spectrum)을 신설한 DOCUMENT_CHANGE다.
+      이 Component는 두 Topic을 구독·발행하지 않고, 쓰는 Interface(Product Created, Vision Result, Image Reference, Ground Truth)와
+      CONVENTIONS는 바뀌지 않았다. 변경할 것이 없으므로 contract_ref는 d0c997c로 유지한다(Issue transition과 조율 결정 C-20에서 재채택은 선택).
+    evidence:
+      - "ISSUE-2aa576c7 compatibility: vision-inspection 영향 없음"
+      - "Shared compare d0c997c...cb6dc3c: docs/INTERFACES.md 삭제 줄은 머리말 확정 목록, PdM Result·Alarm Event 행, QoS 설명뿐이고 Vision 관련 절은 추가만 있음. docs/ARCHITECTURE.md는 4.2 Output 예시와 5.1 pdm/spectrum. CONVENTIONS 변경 없음"
+      - "src/vision_inspection 구독 Topic factory/product/created, 발행 Topic factory/vision/result뿐(docs/spec/03-runtime.md 2절)"
+  ISSUE-88d9231d-a0a1-4923-9181-f80bc2ff0dac:
+    status: no_impact
+    source_revision: cb6dc3cc6900e9f129b2a06688c5e5e5f75fd0b8
+    component_revision: 80438d3001afc6ccd136951b678ab24f7f0f78e3
+    contract_ref: d0c997c97129141d9853a42ce6e0d1f8f7309ae9
+    reason: >-
+      factory-operations가 Alarm Event(factory/alarm/event)를 확정한 DOCUMENT_CHANGE다. 이 Component는 Alarm Event를 구독·발행하지 않고,
+      쓰는 Interface와 CONVENTIONS는 바뀌지 않았다. contract_ref는 d0c997c로 유지한다.
+    evidence:
+      - "ISSUE-88d9231d compatibility: vision-inspection 영향 없음(Alarm Event를 구독하지 않음)"
+      - "Shared compare d0c997c...cb6dc3c: 이 Issue의 변경은 docs/INTERFACES.md 머리말·Alarm Event 행·Alarm Event 절뿐"
