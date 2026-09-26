@@ -9,7 +9,7 @@ steps:
   done: true
 - do: compose.yaml(spec 03 6절 그대로)과 .env.example(변수 7개 주석) 작성
   check: A3, A4
-  done: false
+  done: true
 - do: tests/test_smoke.py::test_compose_smoke(spec 04 3.3절 1~9단계, -p vis-smoke, 빈
     포트, 실패 시 로그 100줄, 항상 down -v)
   check: A1, A2
@@ -26,4 +26,4 @@ steps:
   done: false
 attempts: {}
 evidence: {}
-next_action: 'step 2: compose.yaml과 .env.example 작성, A3·A4 확인'
+next_action: 'step 3: tests/test_smoke.py 작성 후 pytest -m smoke'
