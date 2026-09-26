@@ -16,7 +16,7 @@ steps:
 - do: '__main__.py: main() -> int, 설정 오류 2, 신호 처리기 → disconnect(), stopped 0, 예상 밖
     예외 1 (spec 02 6절, D-16). tests/test_main.py'
   check: A1
-  done: false
+  done: true
 - do: 'conftest.py: broker, fixed_port_broker, service(정리 단계 로그 검사), results(SUBACK
     뒤 반환). 컨테이너 이름 vision-inspection-test-<uuid8> (spec 04 2절)'
   check: .venv/bin/python -m pytest -q --collect-only -m docker
@@ -30,4 +30,5 @@ steps:
   done: false
 attempts: {}
 evidence: {}
-next_action: 'step 3: __main__.py와 test_main.py commit'
+next_action: 'step 4: tests/conftest.py에 broker, fixed_port_broker, service, results
+  추가'
