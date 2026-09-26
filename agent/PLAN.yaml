@@ -13,7 +13,6 @@ milestones:
       - I-1·I-4 MESSAGE와 DOC-1(범위 축소·Ground Truth 입력 경로·Vision Result) DOCUMENT_CHANGE가 Shared main에 merge되었다
       - SHARED_CONFIG.json의 contract_ref가 변경된 계약 commit이다
       - docs/ARCHITECTURE.md의 계약 매핑이 채택한 계약 기준으로 갱신되었다
-    proposed: true
 tasks:
   - id: BOOT-1
     milestone: M0
@@ -52,7 +51,6 @@ tasks:
         text: 게시한 I-1, I-4가 90-shared.md 2·4절에 따라 SHARED_ISSUE_STATUS.yaml에 기록되어 있고 원격 검사를 통과한다
         check: {type: command, run: "python3 -c \"import re, sys, yaml; doc = open('docs/ARCHITECTURE.md', encoding='utf-8').read(); status = (yaml.safe_load(open('SHARED_ISSUE_STATUS.yaml')) or {}).get('issues') or {}; ids = [re.search(r'^- ' + k + r': (ISSUE-[0-9A-Fa-f-]{36})', doc, re.M) for k in ['I-1', 'I-4']]; sys.exit(not all(m and m.group(1) in status for m in ids))\" && python3 agent/core/tools/validate.py --remote"}
     size: S
-    proposed: true
   - id: SHARED-2
     milestone: M1
     type: chore
@@ -71,7 +69,6 @@ tasks:
         text: 게시한 DOC-1이 90-shared.md 2·4절에 따라 SHARED_ISSUE_STATUS.yaml에 기록되어 있고 원격 검사를 통과한다
         check: {type: command, run: "python3 -c \"import re, sys, yaml; doc = open('docs/ARCHITECTURE.md', encoding='utf-8').read(); status = (yaml.safe_load(open('SHARED_ISSUE_STATUS.yaml')) or {}).get('issues') or {}; ids = [re.search(r'^- ' + k + r': (ISSUE-[0-9A-Fa-f-]{36})', doc, re.M) for k in ['DOC-1']]; sys.exit(not all(m and m.group(1) in status for m in ids))\" && python3 agent/core/tools/validate.py --remote"}
     size: S
-    proposed: true
   - id: SHARED-3
     milestone: M1
     type: chore
@@ -85,7 +82,6 @@ tasks:
         text: 사용자가 전달 경로(별도 MQTT Topic 또는 Ground Truth 파일 읽기 등)를 결정했다
         check: {type: manual, how: "docs/ARCHITECTURE.md 11.3절 D-6 재결정 항목에 사용자 결정과 날짜가 적혀 있다"}
     size: S
-    proposed: true
   - id: SHARED-5
     milestone: M1
     type: chore
@@ -105,4 +101,3 @@ tasks:
         text: ARCHITECTURE.md의 계약 매핑(4절)과 참고 ref가 채택한 contract_ref 기준으로 갱신되었다
         check: {type: manual, how: "ARCHITECTURE.md 상단의 참고 ref가 contract_ref와 같고 4절의 [제안] 표시가 승인 결과로 바뀌었는지 리뷰한다"}
     size: S
-    proposed: true
